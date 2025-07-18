@@ -1,0 +1,112 @@
+{
+  "models": [
+    {
+      "id": 1,
+      "name": "GPT-4o",
+      "provider": "openai",
+      "model_id": "gpt-4o-2024-08-06",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "OpenAI Base Models"
+    },
+    {
+      "id": 2,
+      "name": "GPT-4o-Mini",
+      "provider": "openai",
+      "model_id": "gpt-4o-mini-2024-07-18",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "OpenAI Base Models"
+    },
+    {
+      "id": 3,
+      "name": "Claude-3.5",
+      "provider": "anthropic",
+      "model_id": "claude-3-5-sonnet-20241022",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "Anthropic Base Models"
+    },
+    {
+      "id": 4,
+      "name": "Claude-3.7",
+      "provider": "anthropic",
+      "model_id": "claude-3-7-sonnet-20250219",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "Anthropic Base Models"
+    },
+    {
+      "id": 5,
+      "name": "Claude-4-Sonnet",
+      "provider": "anthropic",
+      "model_id": "claude-sonnet-4-20250514",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "Anthropic Base Models"
+    },
+    {
+      "id": 6,
+      "name": "CARDS-mini-GPT",
+      "provider": "openai",
+      "model_id": "ft:gpt-4o-mini-2024-07-18:university-of-exeter:cards-mini-gpt-2024-11-07:AQmahxUm",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (GPT-based)"
+    },
+    {
+      "id": 7,
+      "name": "CARDS-mini-GPT-2024-12-05",
+      "provider": "openai",
+      "model_id": "ft:gpt-4o-mini-2024-07-18:university-of-exeter:cards-mini-gpt-2024-12-05:Ab6KSP24",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (GPT-based)"
+    },
+    {
+      "id": 8,
+      "name": "CARDS-mini-Sonnet",
+      "provider": "openai",
+      "model_id": "ft:gpt-4o-mini-2024-07-18:university-of-exeter:cards-mini-sonnet-2024-11-07:AQnA5ZSx",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (Sonnet-based)"
+    },
+    {
+      "id": 9,
+      "name": "CARDS-mini-Sonnet-2024-12-05",
+      "provider": "openai",
+      "model_id": "ft:gpt-4o-mini-2024-07-18:university-of-exeter:cards-mini-sonnet-2024-12-05:Ab6NHhrV",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (Sonnet-based)"
+    },
+    {
+      "id": 10,
+      "name": "CARDS-mini-Sonnet-2025-04-14",
+      "provider": "openai",
+      "model_id": "ft:gpt-4.1-mini-2025-04-14:university-of-exeter:cards-mini-sonnet-2025-04-14:BMN7soXq",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (Sonnet-based)"
+    },
+    {
+      "id": 11,
+      "name": "CARDS-nano-Sonnet-2025-06-14",
+      "provider": "openai",
+      "model_id": "ft:gpt-4.1-nano-2025-04-14:university-of-exeter:cards-nano-sonnet-2025-06-14:BiBC5Tbe",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Nano Models"
+    },
+    {
+      "id": 12,
+      "name": "GPT-4o-Latest",
+      "provider": "openai",
+      "model_id": "gpt-4o-2024-11-20",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "OpenAI Base Models"
+    }
+  ]
+}
