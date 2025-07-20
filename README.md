@@ -113,7 +113,7 @@ cards-2pO-paper/
 
 ```bash
 # Clone repository
-git clone <repository-url>
+git clone [<repository-url>](https://github.com/project-c3ds/cards-2pO-paper)
 cd cards-2pO-paper
 
 # Create virtual environment
