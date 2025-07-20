@@ -318,7 +318,9 @@ The CARDS classification system is available as an interactive chatbot and API:
 
 ## 📝 Citation
 
-If you use the CARDS framework in your research, please cite:
+### CARDS2pO Framework
+
+If you use the CARDS2pO framework in your research, please cite:
 
 ```bibtex
 @article{cards2pO2025,
@@ -326,6 +328,24 @@ If you use the CARDS framework in your research, please cite:
   author={Travis G. Coan and Ranadheer Malla and Mirjam O. Nanko and William Kattrup and J. Timmons Roberts and John Cook and Constantine Boussalis},
   journal={[Journal]},
   year={2025}
+}
+```
+
+### Original CARDS Paper
+
+This work builds upon the original CARDS methodology. Please also cite:
+
+```bibtex
+@article{coan2021computer,
+  title={Computer-assisted classification of contrarian claims about climate change},
+  author={Coan, Travis G and Boussalis, Constantine and Cook, John and Nanko, Mirjam O},
+  journal={Scientific Reports},
+  volume={11},
+  number={1},
+  pages={22320},
+  year={2021},
+  publisher={Nature Publishing Group},
+  doi={10.1038/s41598-021-01714-4}
 }
 ```
 
