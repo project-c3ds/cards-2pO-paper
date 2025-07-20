@@ -19,3 +19,32 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+===============================================================================
+
+CARDS Dataset License
+
+The CARDS (Computer Assisted Recognition of Denial and Skepticism) dataset and 
+associated data files are licensed under Creative Commons Attribution-NonCommercial-
+ShareAlike 4.0 International License (CC BY-NC-SA 4.0).
+
+This includes all files in the data/ directory:
+- Congressional texts and annotations
+- Few-shot examples and reasoning chains  
+- Classification taxonomy
+- Mapping dictionaries
+- Evaluation results
+
+Data Usage Terms:
+- ✅ Research and academic use
+- ✅ Educational purposes
+- ✅ Non-commercial analysis and evaluation
+- ✅ Citation and attribution required
+- ❌ Commercial model training prohibited
+- ❌ Commercial redistribution prohibited
+- ❌ Creating competing commercial products
+
+For commercial licensing of the CARDS dataset, please contact:
+Centre for Climate Communication and Data Science
+
+Full CC BY-NC-SA 4.0 license: https://creativecommons.org/licenses/by-nc-sa/4.0/

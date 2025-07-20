@@ -8,6 +8,7 @@ __pycache__/
 
 cards-llm/
 workspace.ipynb
+data/evals/paper/
 
 # Distribution / packaging
 .Python
