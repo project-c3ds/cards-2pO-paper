@@ -432,7 +432,7 @@ Performance comparison across different model categories on the CARDS dataset:
 
 The CARDS classification system is available as an interactive chatbot and API:
 
-- **Website**: https://www.discourselab.ai/
+- **Website**: https://cardsbot.ai/
 - **Interactive Demo**: Test climate misinformation detection in real-time
 - **API Access**: Integrate CARDS classification into your applications
 

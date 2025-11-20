@@ -10,6 +10,7 @@ cards-llm/
 workspace.ipynb
 data/
 data/evals/paper/
+.DS_Store
 .claude/
 
 # Distribution / packaging
