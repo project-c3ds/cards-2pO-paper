@@ -1,27 +1,33 @@
-# CARDS Benchmark Framework
-
-A comprehensive framework for benchmarking Large Language Models (LLMs) on climate misinformation detection and classification tasks, featuring the CARDS (Computer Assisted Recognition of Denial and Skepticism) dataset and hierarchical taxonomy.
+# CARDS2pO2025 Paper Replication Repository
 
 ## 🎯 Overview
 
+This repository provides the data and code needed to replicate the CARDS2pO2025 paper findings:
+
+```bibtex
+@article{cards2pO2025,
+  title={Large language model reveals an increase in climate contrarian speech in the United States Congress},
+  author={Travis G. Coan and Ranadheer Malla and Mirjam O. Nanko and William Kattrup and J. Timmons Roberts and John Cook and Constantine Boussalis},
+  journal={Communications Sustainability},
+  year={2025}
+}
+```
+
+The repository contains code and data to replicate both the LLM-based CARDS model and the statistical analysis of congressional climate denial patterns from 1994-2022.
+
+This repository consists of two main sections:
+
+### 1. 🤖 LLM-Based Classification System
 The CARDS benchmark framework evaluates LLMs on their ability to detect and classify climate-related misinformation using a sophisticated hierarchical taxonomy of 103 categories across 7 major superclaim types. The framework supports both zero-shot and few-shot evaluation with dynamic example selection.
 
-## 🚀 Features
-
-- **Multi-Model Evaluation**: Compare 12+ LLM models across OpenAI, Anthropic, and fine-tuned variants
-- **Hierarchical Classification**: 3-level taxonomy (superclaims → subclaims → subsubclaims)
-- **ReCOT Generation**: Reverse Engineered Chain-of-Thought reasoning for enhanced few-shot learning
-- **Dynamic Few-Shot**: Embedding-based similarity selection of relevant examples
-- **Comprehensive Metrics**: Multi-label classification metrics with colored terminal display
-- **Parallel Processing**: Efficient concurrent evaluation with rate limiting
-- **Model Registry**: JSON-based model management with CLI tools
-- **Provider Agnostic**: Unified interface for OpenAI and Anthropic APIs
+### 2. 📊 Statistical Analysis Replication
+Complete R scripts and data processing pipeline to reproduce the paper's statistical findings on congressional climate denial patterns, including multiple imputation for missing data and Bayesian multilevel logistic regression analysis.
 
 ## 📁 Project Structure
 
 ```
 cards-2pO-paper/
-├── 🎯 Core Framework
+├── 🎯 LLM Classification Framework
 │   ├── main.py                 # Primary CLI entry point for benchmarks
 │   ├── benchmark.py            # CARDSBenchmark class - orchestrates evaluation
 │   ├── models.py               # ModelClient & ResponseParser - LLM integration
@@ -40,21 +46,35 @@ cards-2pO-paper/
 │   │   ├── core.py             # ReCOTGenerator - reasoning chain generation
 │   │   └── cli.py              # CLI interface for ReCOT generation
 │
-├── 📊 Data Directory
+├── 📊 Statistical Analysis Replication
+│   ├── replicate_statistical_analysis/
+│   │   ├── README.md           # Detailed documentation for statistical analysis
+│   │   ├── multiple_imputation.R      # MICE-based missing data imputation
+│   │   └── bayesian_estimation.R      # Bayesian multilevel logistic regression
+│
+├── 📁 Data Directory (Download from Figshare)
 │   ├── data/
-│   │   ├── 📋 Core Datasets
+│   │   ├── 📋 LLM Classification Data
 │   │   │   ├── congress_test.csv      # Main benchmark dataset (congressional texts)
 │   │   │   ├── fewshot.csv            # Original few-shot examples
 │   │   │   ├── recot_fewshot.csv      # ReCOT-enhanced few-shot examples
 │   │   │   ├── taxonomy.csv           # Complete classification taxonomy
 │   │   │   └── recot_error_analysis.csv # Error analysis exclusion list
 │   │   │
+│   │   ├── 📊 Statistical Analysis Data
+│   │   │   ├── replication_data.csv   # Congressional data for statistical models
+│   │   │   └── output/                # Generated statistical outputs
+│   │   │       ├── data_imputed_combined.rds    # Multiply imputed datasets
+│   │   │       ├── full_model.rds               # Main Bayesian model
+│   │   │       ├── republican_model.rds         # Republican-only model
+│   │   │       └── table2.tex                   # LaTeX table (Paper Table 2)
+│   │   │
 │   │   ├── 🗺️ Mapping Files
 │   │   │   └── mapping/
 │   │   │       ├── final_claims_dict.json  # Text → final expert labels
 │   │   │       └── true_claims_dict.json   # Text → ground truth labels
 │   │   │
-│   │   ├── 📈 Results
+│   │   ├── 📈 LLM Results
 │   │   │   └── results/
 │   │   │       ├── fewshot_results.csv     # Few-shot evaluation results
 │   │   │       └── zeroshot_results.csv    # Zero-shot evaluation results
@@ -109,22 +129,51 @@ cards-2pO-paper/
 
 ## 🔧 Installation & Setup
 
-### 1. Environment Setup
+### 1. Repository Setup
 
 ```bash
 # Clone repository
 git clone https://github.com/project-c3ds/cards-2pO-paper.git
 cd cards-2pO-paper
 
-# Create virtual environment
+# Create virtual environment for Python components
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
-### 2. API Configuration
+### 2. Data Download (Required)
+
+⚠️ **Important**: The `/data` directory must be downloaded and unzipped from Figshare before running any analyses.
+
+```bash
+# Download replication data from Figshare
+# [PLACEHOLDER - INSERT FIGSHARE URL HERE]
+wget [FIGSHARE_URL] -O replication_data.zip
+
+# Unzip to project root
+unzip replication_data.zip
+
+# Verify data structure
+ls data/
+# Should show: congress_test.csv, fewshot.csv, mapping/, results/, etc.
+```
+
+### 3. R Dependencies (For Statistical Analysis)
+
+```r
+# Install required R packages
+install.packages(c("brms", "mice", "dplyr", "readr", "posterior", 
+                   "xtable", "tibble", "here", "rstan"))
+
+# Verify cmdstanr installation (required for brms)
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+cmdstanr::check_cmdstan()
+```
+
+### 4. API Configuration (For LLM Classification)
 
 ```bash
 # Copy environment template
@@ -135,7 +184,7 @@ OPENAI_API_KEY=your_openai_key_here
 ANTHROPIC_API_KEY=your_anthropic_key_here
 ```
 
-### 3. Verify Installation
+### 5. Verify Installation
 
 ```bash
 # List available models
@@ -146,6 +195,8 @@ python metrics.py --test-claims
 ```
 
 ## 🚀 Usage Examples
+
+## 🤖 LLM Classification System
 
 ### Basic Evaluation
 
@@ -209,26 +260,95 @@ python model_registry.py update 12 --temperature 0.2 --max_tokens 2000
 python model_registry.py remove 12
 ```
 
-## 📊 Data Files Reference
+## 📊 Statistical Analysis Replication
 
-### Core Datasets
+### Complete Statistical Replication
 
+```bash
+# Navigate to statistical analysis directory
+cd replicate_statistical_analysis/
+
+# Step 1: Run multiple imputation for missing data
+Rscript multiple_imputation.R
+
+# Step 2: Run Bayesian multilevel regression analysis
+Rscript bayesian_estimation.R
+
+# View generated results
+ls data/output/
+# Should show: data_imputed_combined.rds, full_model.rds, republican_model.rds, table2.tex
+```
+
+### Individual Components
+
+```r
+# Run only multiple imputation
+source("replicate_statistical_analysis/multiple_imputation.R")
+
+# Run only Bayesian estimation (requires imputed data)
+source("replicate_statistical_analysis/bayesian_estimation.R")
+
+# Check model convergence diagnostics
+model <- readRDS("data/output/full_model.rds")
+summary(model)
+```
+
+### Expected Outputs
+
+The statistical analysis generates:
+- **Imputed datasets**: `data_imputed_combined.rds`
+- **Model objects**: `full_model.rds`, `republican_model.rds`  
+- **LaTeX tables**: `table2.tex` (main results table from paper)
+- **Convergence diagnostics**: Printed to console during estimation
+
+See `replicate_statistical_analysis/README.md` for detailed documentation.
+
+## 📊 Data Requirements & Dependencies
+
+### 📦 Data Download (Required)
+
+⚠️ **Critical**: Download the complete dataset from Figshare before running any analyses:
+
+```bash
+# Download from: [FIGSHARE_URL_PLACEHOLDER]
+wget [FIGSHARE_URL] -O replication_data.zip
+unzip replication_data.zip
+```
+
+### 🤖 LLM Classification Data
+
+**Required for LLM benchmarking:**
 - **`data/congress_test.csv`**: Congressional texts on climate topics with expert annotations
-- **`data/fewshot.csv`**: Curated examples for few-shot learning
+- **`data/fewshot.csv`**: Curated examples for few-shot learning  
 - **`data/recot_fewshot.csv`**: Enhanced few-shot examples with generated reasoning chains
 - **`data/taxonomy.csv`**: Classification taxonomy categories with descriptions
+- **`data/mapping/`**: Label mapping files for evaluation
 
-### Mapping & Configuration
+**Python Dependencies:**
+```bash
+pip install openai anthropic scikit-learn pandas numpy sentence-transformers
+```
 
-- **`data/mapping/final_claims_dict.json`**: Maps texts to expert-annotated final labels
-- **`data/mapping/true_claims_dict.json`**: Maps texts to ground truth labels for evaluation
-- **`models.json`**: Model registry with 12 pre-configured LLM models
+### 📊 Statistical Analysis Data
 
-### Results & Analysis
+**Required for statistical replication:**
+- **`data/replication_data.csv`**: Congressional data with covariates for statistical models
+- **`data/output/`** (directory): Will be created for generated outputs
 
-- **`data/results/fewshot_results.csv`**: Few-shot evaluation results across all models
-- **`data/results/zeroshot_results.csv`**: Zero-shot evaluation results across all models
-- **`data/recot_error_analysis.csv`**: Texts excluded from evaluation due to errors
+**R Dependencies:**
+```r
+install.packages(c("brms", "mice", "dplyr", "readr", "posterior", 
+                   "xtable", "tibble", "here", "rstan", "cmdstanr"))
+```
+
+### 🔗 Data Pipeline
+
+The two components can be run independently or together:
+
+1. **LLM Classification** → Generates climate denial labels for congressional texts
+2. **Statistical Analysis** → Uses these labels (+ covariates) for regression analysis
+
+**Optional Integration**: Use LLM outputs as inputs to statistical models by ensuring the `claim_dummy` variable in `replication_data.csv` matches your LLM classification results.
 
 ## 🎯 Key Metrics & Evaluation
 
@@ -316,11 +436,11 @@ The CARDS classification system is available as an interactive chatbot and API:
 - **Interactive Demo**: Test climate misinformation detection in real-time
 - **API Access**: Integrate CARDS classification into your applications
 
-## 📝 Citation
+## 📝 Citation & Replication
 
-### CARDS2pO Framework
+### 📋 Citing This Replication Repository
 
-If you use the CARDS2pO framework in your research, please cite:
+**If you use any part of this replication repository**, please cite the original paper:
 
 ```bibtex
 @article{cards2pO2025,
@@ -331,7 +451,19 @@ If you use the CARDS2pO framework in your research, please cite:
 }
 ```
 
-### Original CARDS Paper
+### 🔬 Reproducibility & Transparency
+
+This repository is designed for **complete replication** of the CARDS2pO2025 paper:
+
+- ✅ **All code** used in the paper is included
+- ✅ **All data** is available via Figshare  
+- ✅ **Exact computational environment** can be replicated
+- ✅ **Statistical analysis** produces identical results to paper
+- ✅ **LLM benchmarks** can be re-run with same or new models
+
+**Replication Studies**: If you use this repository to replicate or extend our findings, please mention this repository in your methods section and cite the original paper.
+
+### 📚 Related Work Citation
 
 This work builds upon the original CARDS methodology. Please also cite:
 
