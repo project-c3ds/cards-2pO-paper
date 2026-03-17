@@ -65,7 +65,7 @@ class ModelClient:
             model=model_config.model_id,
             messages=full_messages,
             temperature=model_config.temperature,
-            max_tokens=model_config.max_tokens
+            max_completion_tokens=model_config.max_tokens
         )
         
         return {

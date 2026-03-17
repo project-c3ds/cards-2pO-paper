@@ -107,6 +107,42 @@
       "temperature": 0,
       "max_tokens": 4000,
       "category": "OpenAI Base Models"
+    },
+    {
+      "id": 13,
+      "name": "GPT-5",
+      "provider": "openai",
+      "model_id": "gpt-5",
+      "temperature": 1,
+      "max_tokens": 4000,
+      "category": "OpenAI Base Models"
+    },
+    {
+      "id": 14,
+      "name": "GPT-5-Mini",
+      "provider": "openai",
+      "model_id": "gpt-5-mini",
+      "temperature": 1,
+      "max_tokens": 4000,
+      "category": "OpenAI Base Models"
+    },
+    {
+      "id": 15,
+      "name": "GPT-5-Nano",
+      "provider": "openai",
+      "model_id": "gpt-5-nano",
+      "temperature": 1,
+      "max_tokens": 4000,
+      "category": "OpenAI Base Models"
+    },
+    {
+      "id": 16,
+      "name": "CARDS-mini-Sonnet-Vanilla-FT-2024-12-05",
+      "provider": "openai",
+      "model_id": "ft:gpt-4o-mini-2024-07-18:university-of-exeter:cards-mini-sonnet-vanilla-ft-2024-12-05:DKNGRxHN",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (Vanilla)"
     }
   ]
 }

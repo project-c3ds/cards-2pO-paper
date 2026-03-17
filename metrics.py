@@ -129,12 +129,15 @@ def calculate_multi_label_metrics(
     metrics = {
         'micro_f1': round(f1_score(y_true_bin, y_pred_bin, average='micro', zero_division=0), rounding),
         'macro_f1': round(f1_score(y_true_bin, y_pred_bin, average='macro', zero_division=0), rounding),
+        'weighted_f1': round(f1_score(y_true_bin, y_pred_bin, average='weighted', zero_division=0), rounding),
         'samples_f1': round(f1_score(y_true_bin, y_pred_bin, average='samples', zero_division=0), rounding),
         'micro_precision': round(precision_score(y_true_bin, y_pred_bin, average='micro', zero_division=0), rounding),
         'macro_precision': round(precision_score(y_true_bin, y_pred_bin, average='macro', zero_division=0), rounding),
+        'weighted_precision': round(precision_score(y_true_bin, y_pred_bin, average='weighted', zero_division=0), rounding),
         'samples_precision': round(precision_score(y_true_bin, y_pred_bin, average='samples', zero_division=0), rounding),
         'micro_recall': round(recall_score(y_true_bin, y_pred_bin, average='micro', zero_division=0), rounding),
         'macro_recall': round(recall_score(y_true_bin, y_pred_bin, average='macro', zero_division=0), rounding),
+        'weighted_recall': round(recall_score(y_true_bin, y_pred_bin, average='weighted', zero_division=0), rounding),
         'samples_recall': round(recall_score(y_true_bin, y_pred_bin, average='samples', zero_division=0), rounding),
         'accuracy': round(accuracy_score(y_true_bin, y_pred_bin), rounding),
         'hamming_loss': round(hamming_loss(y_true_bin, y_pred_bin), rounding),
@@ -244,62 +247,39 @@ def process_results_dataframe(
 
 
 def display_metrics_table(metrics_df: pd.DataFrame, title: str) -> None:
-    """Display metrics in a colored, formatted table.
-    
+    """Display metrics as formatted tables in the terminal, grouped by metric type.
+
     Args:
         metrics_df: DataFrame containing metrics
         title: Title for the table
     """
-    # ANSI color codes
-    COLORS = {
-        'header': '\033[95m',  # Magenta
-        'model': '\033[94m',   # Blue
-        'metric': '\033[92m',  # Green
-        'high': '\033[91m',    # Red (for high values)
-        'medium': '\033[93m',  # Yellow
-        'low': '\033[96m',     # Cyan
-        'reset': '\033[0m',    # Reset
-        'bold': '\033[1m'      # Bold
+    from tabulate import tabulate
+
+    display_df = metrics_df.copy()
+    display_df = display_df.set_index('model')
+    display_df = display_df.drop(columns=['classification_type'], errors='ignore')
+
+    groups = {
+        'F1 Scores': [c for c in display_df.columns if 'f1' in c],
+        'Precision': [c for c in display_df.columns if 'precision' in c],
+        'Recall': [c for c in display_df.columns if 'recall' in c],
+        'Other': [c for c in display_df.columns if c in ['accuracy', 'hamming_loss', 'matthews_corrcoef']],
     }
-    
-    print(f"\n{COLORS['header']}{COLORS['bold']}{'='*60}{COLORS['reset']}")
-    print(f"{COLORS['header']}{COLORS['bold']}{title.center(60)}{COLORS['reset']}")
-    print(f"{COLORS['header']}{COLORS['bold']}{'='*60}{COLORS['reset']}\n")
-    
-    # Display each model's metrics
-    for _, row in metrics_df.iterrows():
-        model_name = row['model']
-        classification_type = row['classification_type']
-        
-        print(f"{COLORS['model']}{COLORS['bold']}{model_name} ({classification_type}){COLORS['reset']}")
-        print(f"{COLORS['model']}{'-' * (len(model_name) + len(classification_type) + 3)}{COLORS['reset']}")
-        
-        # Key metrics to highlight
-        key_metrics = ['samples_f1', 'samples_precision', 'samples_recall', 'accuracy']
-        
-        for metric in key_metrics:
-            if metric in row:
-                value = row[metric]
-                # Color code based on value
-                if value >= 0.8:
-                    color = COLORS['high']
-                elif value >= 0.6:
-                    color = COLORS['medium']
-                else:
-                    color = COLORS['low']
-                
-                metric_display = metric.replace('_', ' ').title()
-                print(f"  {COLORS['metric']}{metric_display:15}{COLORS['reset']}: {color}{value:.3f}{COLORS['reset']}")
-        
-        # Additional metrics
-        other_metrics = ['hamming_loss', 'matthews_corrcoef']
-        for metric in other_metrics:
-            if metric in row:
-                value = row[metric]
-                metric_display = metric.replace('_', ' ').title()
-                print(f"  {COLORS['metric']}{metric_display:15}{COLORS['reset']}: {COLORS['metric']}{value:.3f}{COLORS['reset']}")
-        
-        print()
+
+    print(f"\n\033[95m\033[1m{'=' * 60}\033[0m")
+    print(f"\033[95m\033[1m{title.center(60)}\033[0m")
+    print(f"\033[95m\033[1m{'=' * 60}\033[0m")
+
+    for group_name, cols in groups.items():
+        cols = [c for c in cols if c in display_df.columns]
+        if not cols:
+            continue
+        sub = display_df[cols].copy()
+        sub.columns = [c.replace('_', ' ').title() for c in sub.columns]
+        print(f"\n\033[94m\033[1m{group_name}\033[0m")
+        print(tabulate(sub, headers='keys', tablefmt='grid', floatfmt='.3f'))
+
+    print()
 
 
 def run_full_evaluation() -> None:
@@ -322,58 +302,93 @@ def run_full_evaluation() -> None:
         print(f"🔄 Processing zeroshot results...")
         df_zeroshot = pd.read_csv('data/results/zeroshot_results.csv')
         df_zeroshot = process_results_dataframe(
-            df_zeroshot, 
+            df_zeroshot,
             final_claims_dict,
-            true_claims_dict, 
+            true_claims_dict,
             'zeroshot'
         )
-        
+
+        # Process nocot results if available
+        nocot_metrics = None
+        try:
+            print(f"🔄 Processing nocot results...")
+            df_nocot = pd.read_csv('data/results/nocot_results.csv')
+            df_nocot = process_results_dataframe(
+                df_nocot,
+                final_claims_dict,
+                true_claims_dict,
+                'nocot'
+            )
+        except FileNotFoundError:
+            print("ℹ️  No nocot results found, skipping.")
+            df_nocot = None
+
         # Compute metrics
         print(f"📊 Computing metrics...")
         fewshot_metrics = compute_metrics_for_groups(df_fewshot, column_name='final_claims')
         zeroshot_metrics = compute_metrics_for_groups(df_zeroshot, column_name='final_claims')
-        
+        if df_nocot is not None:
+            nocot_metrics = compute_metrics_for_groups(df_nocot, column_name='final_claims')
+
         # Filter metrics to key columns
         cols_needed = [
-            'model', 'classification_type', 'samples_f1', 'samples_precision', 
-            'samples_recall', 'accuracy', 'hamming_loss', 'matthews_corrcoef'
+            'model', 'classification_type',
+            'micro_f1', 'macro_f1', 'weighted_f1', 'samples_f1',
+            'micro_precision', 'macro_precision', 'weighted_precision', 'samples_precision',
+            'micro_recall', 'macro_recall', 'weighted_recall', 'samples_recall',
+            'accuracy', 'hamming_loss', 'matthews_corrcoef'
         ]
-        
+
         fewshot_metrics = fewshot_metrics[cols_needed]
         zeroshot_metrics = zeroshot_metrics[cols_needed]
-        
+        if nocot_metrics is not None:
+            nocot_metrics = nocot_metrics[cols_needed]
+
         # Filter out specific models if needed
         models_to_ignore = ['Claude-4-Sonnet', 'CARDS-nano-Sonnet-2025-06-14']
         fewshot_metrics = fewshot_metrics[~fewshot_metrics['model'].isin(models_to_ignore)]
         zeroshot_metrics = zeroshot_metrics[~zeroshot_metrics['model'].isin(models_to_ignore)]
-        
+        if nocot_metrics is not None:
+            nocot_metrics = nocot_metrics[~nocot_metrics['model'].isin(models_to_ignore)]
+
         # Display results
         display_metrics_table(fewshot_metrics, "FEWSHOT EVALUATION RESULTS")
         display_metrics_table(zeroshot_metrics, "ZEROSHOT EVALUATION RESULTS")
-        
+        if nocot_metrics is not None:
+            display_metrics_table(nocot_metrics, "NO-COT EVALUATION RESULTS")
+
         # Combined summary
-        combined_metrics = pd.concat([fewshot_metrics, zeroshot_metrics], ignore_index=True)
-        
+        all_metrics = [fewshot_metrics, zeroshot_metrics]
+        if nocot_metrics is not None:
+            all_metrics.append(nocot_metrics)
+        combined_metrics = pd.concat(all_metrics, ignore_index=True)
+
         print(f"\n\033[95m\033[1m{'='*60}\033[0m")
         print(f"\033[95m\033[1m{'SUMMARY STATISTICS'.center(60)}\033[0m")
         print(f"\033[95m\033[1m{'='*60}\033[0m\n")
-        
+
         # Best performing models
         best_fewshot = fewshot_metrics.loc[fewshot_metrics['samples_f1'].idxmax()]
         best_zeroshot = zeroshot_metrics.loc[zeroshot_metrics['samples_f1'].idxmax()]
-        
+
         print(f"🏆 \033[92mBest Fewshot Model:\033[0m {best_fewshot['model']} (F1: {best_fewshot['samples_f1']:.3f})")
         print(f"🏆 \033[92mBest Zeroshot Model:\033[0m {best_zeroshot['model']} (F1: {best_zeroshot['samples_f1']:.3f})")
-        
+        if nocot_metrics is not None:
+            best_nocot = nocot_metrics.loc[nocot_metrics['samples_f1'].idxmax()]
+            print(f"🏆 \033[92mBest No-CoT Model:\033[0m {best_nocot['model']} (F1: {best_nocot['samples_f1']:.3f})")
+
         # Average performance
         avg_fewshot_f1 = fewshot_metrics['samples_f1'].mean()
         avg_zeroshot_f1 = zeroshot_metrics['samples_f1'].mean()
-        
+
         print(f"📊 \033[94mAverage Fewshot F1:\033[0m {avg_fewshot_f1:.3f}")
         print(f"📊 \033[94mAverage Zeroshot F1:\033[0m {avg_zeroshot_f1:.3f}")
-        
+        if nocot_metrics is not None:
+            avg_nocot_f1 = nocot_metrics['samples_f1'].mean()
+            print(f"📊 \033[94mAverage No-CoT F1:\033[0m {avg_nocot_f1:.3f}")
+
         print(f"\n✅ \033[92mEvaluation complete!\033[0m")
-        
+
         return combined_metrics
         
     except FileNotFoundError as e:

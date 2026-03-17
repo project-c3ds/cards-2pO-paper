@@ -22,6 +22,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('--sample_size', type=int, help='Sample size', default=2)
     parser.add_argument('--models', nargs='*', type=int, help='List of model IDs to run (default: all models)')
     parser.add_argument('--list_models', action='store_true', help='List all available models and exit')
+    parser.add_argument('--no-cot', action='store_true', help='Disable chain-of-thought trigger prompt')
     return parser.parse_args()
 
 
@@ -49,22 +50,27 @@ def load_data(args: argparse.Namespace) -> pd.DataFrame:
 
 
 def prepare_output_path(args: argparse.Namespace) -> str:
-    """Prepare output file path."""
+    """Prepare output file path in dedicated predictions directory."""
+    # Create predictions directory if it doesn't exist
+    predictions_dir = 'data/predictions'
+    os.makedirs(predictions_dir, exist_ok=True)
+    
     if args.input_file:
-        input_file_extension = os.path.splitext(args.input_file)[1]
-        if input_file_extension == '.csv':
-            output_path = args.input_file.replace('.csv', '_predictions.parquet')
-        elif input_file_extension == '.parquet':
-            output_path = args.input_file.replace('.parquet', '_predictions.parquet')
+        input_filename = os.path.basename(args.input_file)
+        input_name, input_ext = os.path.splitext(input_filename)
+        if input_ext in ['.csv', '.parquet']:
+            output_filename = f'{input_name}_predictions.parquet'
         else:
-            output_path = 'predictions.parquet'
+            output_filename = 'predictions.parquet'
     else:
-        output_path = 'predictions.parquet'
+        # Default case: using congress_test.csv
+        output_filename = 'congress_test_predictions.parquet'
     
     if args.output_suffix:
-        output_path = output_path.replace('.parquet', f'_{args.output_suffix}.parquet')
+        name, ext = os.path.splitext(output_filename)
+        output_filename = f'{name}_{args.output_suffix}{ext}'
     
-    return output_path
+    return os.path.join(predictions_dir, output_filename)
 
 
 def main():
@@ -97,12 +103,13 @@ def main():
     )
     
     # Initialize benchmark
+    active_prompt = "Classify the text." if args.no_cot else prompt
     benchmark = CARDSBenchmark(
         openai_api_key=config_manager.openai_api_key,
         anthropic_api_key=config_manager.anthropic_api_key,
         system_instruction=system_instruction,
         fewshot_instruction=fewshot_instruction,
-        prompt=prompt,
+        prompt=active_prompt,
         codebook=codebook
     )
     
