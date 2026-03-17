@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+.archives/
+
+oss/
+
 cards-llm/
 workspace.ipynb
 data/evals/paper/

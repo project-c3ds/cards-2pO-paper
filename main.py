@@ -123,7 +123,7 @@ def main():
     
     # Apply sampling if requested
     if eval_config.run_sample:
-        df = df.sample(eval_config.sample_size, random_state=42).reset_index(drop=True)
+        df = df.sample(eval_config.sample_size, random_state=35).reset_index(drop=True)
         print(f"Sample data shape: {df.shape}")
     
     # Remove duplicates

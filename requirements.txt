@@ -1,9 +1,8 @@
-openai
 pandas
 tqdm
 pyarrow
 tiktoken
 python-dotenv
 scikit-learn
-anthropic
 tenacity
+litellm

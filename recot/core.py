@@ -27,8 +27,8 @@ class ReCOTGenerator:
         output_dir: str = "results/recot_jsons"
     ):
         """Initialize ReCOT generator."""
-        self.model_client = ModelClient(openai_api_key, anthropic_api_key)
-        self.response_parser = ResponseParser(self.model_client.openai_client)
+        self.model_client = ModelClient()
+        self.response_parser = ResponseParser()
         self.output_dir = output_dir
         
         # Create output directory if it doesn't exist

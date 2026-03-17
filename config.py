@@ -2,8 +2,8 @@
 
 import os
 import json
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Dict, Any
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -19,6 +19,7 @@ class ModelConfig:
     model_id: str
     temperature: float = 0
     max_tokens: int = 4000
+    extra_body: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -55,7 +56,8 @@ class ConfigManager:
                     provider=model['provider'],
                     model_id=model['model_id'],
                     temperature=model.get('temperature', 0),
-                    max_tokens=model.get('max_tokens', 4000)
+                    max_tokens=model.get('max_tokens', 4000),
+                    extra_body=model.get('extra_body', {})
                 )
                 for model in data['models']
             ]

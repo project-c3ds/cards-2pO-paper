@@ -4,6 +4,7 @@ import pandas as pd
 from typing import List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
+from openai import OpenAI
 
 from config import ModelConfig, EvaluationConfig
 from models import ModelClient, ResponseParser
@@ -23,9 +24,10 @@ class CARDSBenchmark:
         codebook: str = None
     ):
         """Initialize the benchmark framework with API clients and prompts."""
-        self.model_client = ModelClient(openai_api_key, anthropic_api_key)
-        self.response_parser = ResponseParser(self.model_client.openai_client)
-        self.embedding_manager = EmbeddingManager(self.model_client.openai_client)
+        self.model_client = ModelClient()
+        self.response_parser = ResponseParser()
+        openai_client = OpenAI(api_key=openai_api_key) if openai_api_key else None
+        self.embedding_manager = EmbeddingManager(openai_client)
         
         # Store prompt templates
         self.system_instruction = system_instruction
@@ -45,21 +47,15 @@ class CARDSBenchmark:
     
     def _build_prompt_messages(self, text: str, use_fewshot: bool = False) -> List[Dict[str, str]]:
         """Build the complete prompt message sequence for the model."""
-        messages = [
-            {"role": "system", "content": self.system_instruction.format(codebook=self.codebook)}
-        ]
-        
+        system_content = self.system_instruction.format(codebook=self.codebook)
+
         if use_fewshot:
             fewshot_examples = self.embedding_manager.get_dynamic_fewshot_examples(text)
-            messages.append(
-                {"role": "system", "content": self.fewshot_instruction.format(fewshot=fewshot_examples)}
-            )
-        
-        messages.append(
-            {"role": "system", "content": self.text_template.format(text=text)}
-        )
-        
-        return messages
+            system_content += "\n\n" + self.fewshot_instruction.format(fewshot=fewshot_examples)
+
+        system_content += "\n\n" + self.text_template.format(text=text)
+
+        return [{"role": "system", "content": system_content}]
     
     def _evaluate_single_text(
         self,

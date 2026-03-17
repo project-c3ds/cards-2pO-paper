@@ -32,7 +32,8 @@ cards-2pO-paper/
 │
 ├── 🤖 Model Management
 │   ├── model_registry.py       # CLI for model registration/management
-│   └── models.json             # Model definitions (12 pre-configured models)
+│   ├── merge_results.py        # Merge parquet predictions into CSV results
+│   └── models.json             # Model definitions (15 pre-configured models)
 │
 ├── 🧠 ReCOT Module
 │   ├── recot/
@@ -88,8 +89,8 @@ cards-2pO-paper/
 
 - **ModelClient**: Unified interface for OpenAI and Anthropic APIs with retry logic
 - **ResponseParser**: Extracts structured classifications from LLM responses
-- **Model Registry**: 12 pre-configured models:
-  - **OpenAI Base**: GPT-4o, GPT-4o-Mini, GPT-4o-Latest
+- **Model Registry**: 15 pre-configured models:
+  - **OpenAI Base**: GPT-4o, GPT-4o-Mini, GPT-4o-Latest, GPT-5, GPT-5-Mini, GPT-5-Nano
   - **Anthropic Base**: Claude-3.5, Claude-3.7, Claude-4-Sonnet
   - **CARDS Fine-tuned**: GPT models trained on CARDS data
   - **CARDS Nano**: Specialized smaller models
@@ -207,6 +208,19 @@ python model_registry.py update 12 --temperature 0.2 --max_tokens 2000
 
 # Remove model
 python model_registry.py remove 12
+```
+
+### Results Management
+
+```bash
+# Merge parquet predictions into existing CSV results
+python merge_results.py congress_test_predictions.parquet
+
+# Merge into specific target with classification type
+python merge_results.py my_predictions.parquet --target data/results/fewshot_results.csv --type fewshot
+
+# Skip backup creation
+python merge_results.py predictions.parquet --no-backup
 ```
 
 ## 📊 Data Files Reference
