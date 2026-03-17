@@ -66,6 +66,16 @@ class CARDSBenchmark:
         """Evaluate a single text with a specific model."""
         messages = self._build_prompt_messages(text, use_fewshot)
         response = self.model_client.get_model_response(messages, model_config, self.prompt)
+        
+        # Handle case where all retries failed
+        if response is None:
+            return {
+                "model": model_config.name,
+                "response": "Error: API call failed after all retries",
+                "usage": {"completion_tokens": 0, "prompt_tokens": 0, "total_tokens": 0},
+                "text": text
+            }
+        
         response["text"] = text
         return response
     

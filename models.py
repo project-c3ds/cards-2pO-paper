@@ -5,6 +5,7 @@ import re
 from typing import List, Dict, Any
 from pydantic import BaseModel
 import litellm
+from litellm.exceptions import RateLimitError
 from config import ModelConfig
 
 import tenacity
@@ -29,9 +30,9 @@ class ModelClient:
 
     @tenacity.retry(
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
-        stop=tenacity.stop_after_attempt(5),
-        retry=tenacity.retry_if_exception_type(Exception),
-        reraise=True
+        stop=tenacity.stop_after_attempt(10),
+        retry=tenacity.retry_if_exception_type(RateLimitError),
+        reraise=False
     )
     def get_model_response(
         self,

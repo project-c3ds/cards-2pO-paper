@@ -8,6 +8,7 @@ from typing import Dict, Any, List, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import tenacity
+from litellm.exceptions import RateLimitError
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -36,8 +37,9 @@ class ReCOTGenerator:
     
     @tenacity.retry(
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
-        stop=tenacity.stop_after_attempt(5),
-        retry=tenacity.retry_if_exception_type(Exception)
+        stop=tenacity.stop_after_attempt(10),
+        retry=tenacity.retry_if_exception_type(RateLimitError),
+        reraise=False
     )
     def _generate_recot_single(
         self,
@@ -54,6 +56,11 @@ class ReCOTGenerator:
         
         # Get model response
         response = self.model_client.get_model_response(messages, model_config, prompt)
+        
+        # Handle case where all retries failed
+        if response is None:
+            return "Error: API call failed after all retries", {"completion_tokens": 0, "prompt_tokens": 0, "total_tokens": 0}
+        
         return response["response"], response["usage"]
     
     def generate_recot_for_row(
