@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 from pydantic import BaseModel
 import litellm
 from litellm.exceptions import RateLimitError
+from openai import OpenAI
 from config import ModelConfig
 
 import tenacity
@@ -48,6 +49,7 @@ class ModelClient:
             messages=full_messages,
             temperature=model_config.temperature,
             max_tokens=model_config.max_tokens,
+            timeout=120,
         )
         if model_config.extra_body:
             kwargs["extra_body"] = model_config.extra_body
@@ -81,7 +83,8 @@ class ResponseParser:
 
     def _convert_to_structured_output(self, text: str) -> Dict:
         """Convert text to structured output using LiteLLM."""
-        response = litellm.completion(
+        client = OpenAI()
+        response = client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": f"""
@@ -96,7 +99,7 @@ class ResponseParser:
                 """},
                 {"role": "user", "content": "Let's work this out in a step by step way to be sure we have the right answer"}
             ],
-            response_format=Categories
+            response_format=Categories,
         )
         result = json.loads(response.choices[0].message.content)
         return result

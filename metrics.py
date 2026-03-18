@@ -25,7 +25,11 @@ def process_claims(claim_list: List[str], level: int) -> List[str]:
     # Build the hierarchical claims data structure
     claims = defaultdict(lambda: defaultdict(set))
     for claim in claim_list:
-        X, Y, Z = claim.split('_')[:3]
+        parts = claim.split('_')
+        if len(parts) < 3 or not all(p.isdigit() for p in parts[:3]):
+            X, Y, Z = '9', '9', '9'
+        else:
+            X, Y, Z = parts[:3]
         claims[X][Y].add(Z)
 
     # Process Superclaims
@@ -148,13 +152,18 @@ def calculate_multi_label_metrics(
 
 def compute_metrics_for_groups(df: pd.DataFrame, column_name: str = 'final_claims') -> pd.DataFrame:
     """Compute metrics for each classification type and model in the DataFrame.
-    
+
+    Computes three sets of metrics:
+    - all: all samples
+    - detection: binary detection (0_0_0 vs non-0_0_0)
+    - classification: only non-0_0_0 samples (actual claim classification)
+
     Args:
         df: DataFrame containing predictions and true labels
         column_name: Name of the column containing true labels
-        
+
     Returns:
-        DataFrame with computed metrics for each model and classification type
+        DataFrame with computed metrics for each model, classification type, and subset
     """
 
     metrics_list = []
@@ -162,12 +171,27 @@ def compute_metrics_for_groups(df: pd.DataFrame, column_name: str = 'final_claim
     for (classification_type, model), group in df.groupby(['classification_type', 'model']):
         y_true = group[column_name].tolist()
         y_pred = group['predicted_claims'].tolist()
+
+        # All samples
         metrics = calculate_multi_label_metrics(y_true, y_pred)
-        metrics['classification_type'] = classification_type
-        metrics['model'] = model
-        # put model and classification type at the beginning of the dictionary
-        metrics = {**{'model': model, 'classification_type': classification_type}, **metrics}
+        metrics = {**{'model': model, 'classification_type': classification_type, 'subset': 'all'}, **metrics}
         metrics_list.append(metrics)
+
+        # Binary detection: is there a claim or not?
+        y_true_bin = [[str(int(t != ['0_0_0']))] for t in y_true]
+        y_pred_bin = [[str(int(p != ['0_0_0']))] for p in y_pred]
+        metrics_det = calculate_multi_label_metrics(y_true_bin, y_pred_bin)
+        metrics_det = {**{'model': model, 'classification_type': classification_type, 'subset': 'detection'}, **metrics_det}
+        metrics_list.append(metrics_det)
+
+        # Classification: only non-0_0_0 ground truth samples
+        non_zero_mask = [t != ['0_0_0'] for t in y_true]
+        if any(non_zero_mask):
+            y_true_nz = [t for t, m in zip(y_true, non_zero_mask) if m]
+            y_pred_nz = [p for p, m in zip(y_pred, non_zero_mask) if m]
+            metrics_cls = calculate_multi_label_metrics(y_true_nz, y_pred_nz)
+            metrics_cls = {**{'model': model, 'classification_type': classification_type, 'subset': 'classification'}, **metrics_cls}
+            metrics_list.append(metrics_cls)
 
     # Convert the list of metrics dictionaries to a DataFrame
     metrics_df = pd.DataFrame(metrics_list)
@@ -247,7 +271,7 @@ def process_results_dataframe(
 
 
 def display_metrics_table(metrics_df: pd.DataFrame, title: str) -> None:
-    """Display metrics as formatted tables in the terminal, grouped by metric type.
+    """Display all metrics in a single table with model as index.
 
     Args:
         metrics_df: DataFrame containing metrics
@@ -258,27 +282,12 @@ def display_metrics_table(metrics_df: pd.DataFrame, title: str) -> None:
     display_df = metrics_df.copy()
     display_df = display_df.set_index('model')
     display_df = display_df.drop(columns=['classification_type'], errors='ignore')
-
-    groups = {
-        'F1 Scores': [c for c in display_df.columns if 'f1' in c],
-        'Precision': [c for c in display_df.columns if 'precision' in c],
-        'Recall': [c for c in display_df.columns if 'recall' in c],
-        'Other': [c for c in display_df.columns if c in ['accuracy', 'hamming_loss', 'matthews_corrcoef']],
-    }
+    display_df.columns = [c.replace('_', ' ').title() for c in display_df.columns]
 
     print(f"\n\033[95m\033[1m{'=' * 60}\033[0m")
     print(f"\033[95m\033[1m{title.center(60)}\033[0m")
     print(f"\033[95m\033[1m{'=' * 60}\033[0m")
-
-    for group_name, cols in groups.items():
-        cols = [c for c in cols if c in display_df.columns]
-        if not cols:
-            continue
-        sub = display_df[cols].copy()
-        sub.columns = [c.replace('_', ' ').title() for c in sub.columns]
-        print(f"\n\033[94m\033[1m{group_name}\033[0m")
-        print(tabulate(sub, headers='keys', tablefmt='grid', floatfmt='.3f'))
-
+    print(tabulate(display_df, headers='keys', tablefmt='grid', floatfmt='.3f'))
     print()
 
 
@@ -330,20 +339,6 @@ def run_full_evaluation() -> None:
         if df_nocot is not None:
             nocot_metrics = compute_metrics_for_groups(df_nocot, column_name='final_claims')
 
-        # Filter metrics to key columns
-        cols_needed = [
-            'model', 'classification_type',
-            'micro_f1', 'macro_f1', 'weighted_f1', 'samples_f1',
-            'micro_precision', 'macro_precision', 'weighted_precision', 'samples_precision',
-            'micro_recall', 'macro_recall', 'weighted_recall', 'samples_recall',
-            'accuracy', 'hamming_loss', 'matthews_corrcoef'
-        ]
-
-        fewshot_metrics = fewshot_metrics[cols_needed]
-        zeroshot_metrics = zeroshot_metrics[cols_needed]
-        if nocot_metrics is not None:
-            nocot_metrics = nocot_metrics[cols_needed]
-
         # Filter out specific models if needed
         models_to_ignore = ['Claude-4-Sonnet', 'CARDS-nano-Sonnet-2025-06-14']
         fewshot_metrics = fewshot_metrics[~fewshot_metrics['model'].isin(models_to_ignore)]
@@ -351,44 +346,30 @@ def run_full_evaluation() -> None:
         if nocot_metrics is not None:
             nocot_metrics = nocot_metrics[~nocot_metrics['model'].isin(models_to_ignore)]
 
-        # Display results
-        display_metrics_table(fewshot_metrics, "FEWSHOT EVALUATION RESULTS")
-        display_metrics_table(zeroshot_metrics, "ZEROSHOT EVALUATION RESULTS")
-        if nocot_metrics is not None:
-            display_metrics_table(nocot_metrics, "NO-COT EVALUATION RESULTS")
-
-        # Combined summary
+        # Combine all metrics
         all_metrics = [fewshot_metrics, zeroshot_metrics]
         if nocot_metrics is not None:
             all_metrics.append(nocot_metrics)
         combined_metrics = pd.concat(all_metrics, ignore_index=True)
 
-        print(f"\n\033[95m\033[1m{'='*60}\033[0m")
-        print(f"\033[95m\033[1m{'SUMMARY STATISTICS'.center(60)}\033[0m")
-        print(f"\033[95m\033[1m{'='*60}\033[0m\n")
+        # Save to markdown — zeroshot only, two tables
+        key_cols = ['model', 'samples_f1', 'macro_f1', 'micro_f1', 'hamming_loss']
 
-        # Best performing models
-        best_fewshot = fewshot_metrics.loc[fewshot_metrics['samples_f1'].idxmax()]
-        best_zeroshot = zeroshot_metrics.loc[zeroshot_metrics['samples_f1'].idxmax()]
+        output_path = 'data/results/metrics.md'
+        with open(output_path, 'w') as f:
+            # Table 1: Zeroshot key metrics (all samples)
+            zs_all = zeroshot_metrics[zeroshot_metrics['subset'] == 'all']
+            f.write('## Zeroshot — Key Metrics\n\n')
+            f.write(zs_all[key_cols].to_markdown(index=False, floatfmt='.3f'))
+            f.write('\n\n')
 
-        print(f"🏆 \033[92mBest Fewshot Model:\033[0m {best_fewshot['model']} (F1: {best_fewshot['samples_f1']:.3f})")
-        print(f"🏆 \033[92mBest Zeroshot Model:\033[0m {best_zeroshot['model']} (F1: {best_zeroshot['samples_f1']:.3f})")
-        if nocot_metrics is not None:
-            best_nocot = nocot_metrics.loc[nocot_metrics['samples_f1'].idxmax()]
-            print(f"🏆 \033[92mBest No-CoT Model:\033[0m {best_nocot['model']} (F1: {best_nocot['samples_f1']:.3f})")
+            # Table 2: Zeroshot binary detection (claim vs no-claim)
+            zs_det = zeroshot_metrics[zeroshot_metrics['subset'] == 'detection']
+            f.write('## Zeroshot — Claim vs No-Claim (Binary Detection)\n\n')
+            f.write(zs_det[key_cols].to_markdown(index=False, floatfmt='.3f'))
+            f.write('\n\n')
 
-        # Average performance
-        avg_fewshot_f1 = fewshot_metrics['samples_f1'].mean()
-        avg_zeroshot_f1 = zeroshot_metrics['samples_f1'].mean()
-
-        print(f"📊 \033[94mAverage Fewshot F1:\033[0m {avg_fewshot_f1:.3f}")
-        print(f"📊 \033[94mAverage Zeroshot F1:\033[0m {avg_zeroshot_f1:.3f}")
-        if nocot_metrics is not None:
-            avg_nocot_f1 = nocot_metrics['samples_f1'].mean()
-            print(f"📊 \033[94mAverage No-CoT F1:\033[0m {avg_nocot_f1:.3f}")
-
-        print(f"\n✅ \033[92mEvaluation complete!\033[0m")
-
+        print(f"✅ Metrics saved to {output_path}")
         return combined_metrics
         
     except FileNotFoundError as e:

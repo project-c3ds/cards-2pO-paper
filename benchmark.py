@@ -9,6 +9,7 @@ from openai import OpenAI
 from config import ModelConfig, EvaluationConfig
 from models import ModelClient, ResponseParser
 from embeddings import EmbeddingManager
+from checkpoint import CheckpointStore
 
 
 class CARDSBenchmark:
@@ -21,11 +22,13 @@ class CARDSBenchmark:
         system_instruction: str = None,
         fewshot_instruction: str = None,
         prompt: str = None,
-        codebook: str = None
+        codebook: str = None,
+        db_path: str = "data/results.db"
     ):
         """Initialize the benchmark framework with API clients and prompts."""
         self.model_client = ModelClient()
         self.response_parser = ResponseParser()
+        self.checkpoint = CheckpointStore(db_path)
         openai_client = OpenAI(api_key=openai_api_key) if openai_api_key else None
         self.embedding_manager = EmbeddingManager(openai_client)
         
@@ -59,6 +62,7 @@ class CARDSBenchmark:
     
     def _evaluate_single_text(
         self,
+        row_idx: int,
         text: str,
         model_config: ModelConfig,
         use_fewshot: bool = False
@@ -66,18 +70,28 @@ class CARDSBenchmark:
         """Evaluate a single text with a specific model."""
         messages = self._build_prompt_messages(text, use_fewshot)
         response = self.model_client.get_model_response(messages, model_config, self.prompt)
-        
+
         # Handle case where all retries failed
         if response is None:
-            return {
+            result = {
                 "model": model_config.name,
                 "response": "Error: API call failed after all retries",
                 "usage": {"completion_tokens": 0, "prompt_tokens": 0, "total_tokens": 0},
                 "text": text
             }
-        
-        response["text"] = text
-        return response
+        else:
+            response["text"] = text
+            result = response
+
+        # Save to checkpoint immediately
+        self.checkpoint.save_result(
+            model=model_config.name,
+            row_idx=row_idx,
+            text=text,
+            response=result["response"],
+            usage=result["usage"]
+        )
+        return result
     
     def run_benchmark(
         self,
@@ -89,31 +103,48 @@ class CARDSBenchmark:
         tqdm.pandas()
         all_texts = data[config.text_column].tolist()
         all_responses = []
-        
+
         for model_config in model_configs:
-            print(f"\n🚀 Benchmarking {model_config.name}...")
-            
+            # Check which rows are already completed
+            completed = self.checkpoint.get_completed_indices(model_config.name)
+
+            if len(completed) == len(all_texts):
+                print(f"\n✅ {model_config.name} already complete ({len(completed)}/{len(all_texts)}), loading from checkpoint...")
+                all_responses.extend(self.checkpoint.get_results(model_config.name))
+                continue
+
+            if completed:
+                print(f"\n🔄 Resuming {model_config.name} ({len(completed)}/{len(all_texts)} done)...")
+                # Load existing results
+                all_responses.extend(self.checkpoint.get_results(model_config.name))
+            else:
+                print(f"\n🚀 Benchmarking {model_config.name}...")
+
+            # Build list of remaining (idx, text) pairs
+            remaining = [(i, text) for i, text in enumerate(all_texts) if i not in completed]
+
             # Adjust max_workers for Anthropic API rate limits
             max_workers = 10 if model_config.provider == 'anthropic' else config.max_workers
-            
+
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [
                     executor.submit(
                         self._evaluate_single_text,
+                        idx,
                         text,
                         model_config,
                         config.use_fewshot
                     )
-                    for text in all_texts
+                    for idx, text in remaining
                 ]
-                
+
                 for future in tqdm(
-                    as_completed(futures), 
-                    total=len(futures), 
+                    as_completed(futures),
+                    total=len(futures),
                     desc=f"Processing {model_config.name} ({max_workers} workers)"
                 ):
                     all_responses.append(future.result())
-        
+
         return self._process_benchmark_results(all_responses, data, config)
     
     def _process_benchmark_results(
@@ -133,15 +164,32 @@ class CARDSBenchmark:
             right_on=config.text_column
         ).reset_index(drop=True)
         
-        # Extract structured classifications
+        # Extract structured classifications (with checkpoint support)
         print("\n📊 Processing model responses...")
-        df_results['classification_dict'] = df_results['response'].progress_apply(
-            self.response_parser.extract_classification_dict
+        parsed_cache = {}
+        for model_name in df_results['model'].unique():
+            parsed_cache[model_name] = self.checkpoint.get_parsed_results(model_name)
+
+        def _parse_with_checkpoint(row):
+            model = row['model']
+            row_idx = row.get('row_idx', row.name)
+            cached = parsed_cache.get(model, {})
+            if row_idx in cached:
+                return cached[row_idx]
+            result = self.response_parser.extract_classification_dict(row['response'])
+            self.checkpoint.save_parsed_result(model, row_idx, result)
+            return result
+
+        df_results['classification_dict'] = df_results.progress_apply(
+            _parse_with_checkpoint, axis=1
         )
         
         # Extract predicted claims
         df_results['predicted_claims'] = df_results['classification_dict'].apply(
-            lambda x: [t['category'].split('>')[0].replace('<', '') for t in x['categories']]
+            lambda x: [
+                (t['category'] if isinstance(t, dict) else t).split('>')[0].replace('<', '')
+                for t in x.get('categories', [])
+            ]
         )
         
         # Clean up duplicate text column

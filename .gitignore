@@ -9,6 +9,7 @@ __pycache__/
 .archives/
 
 oss/
+predictions/
 
 cards-llm/
 workspace.ipynb
