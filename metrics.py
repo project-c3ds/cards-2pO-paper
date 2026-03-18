@@ -266,6 +266,9 @@ def process_results_dataframe(
     df['true_claims'] = df['true_claims'].map(lambda x: process_claims(x, level))
     df['final_claims'] = df['final_claims'].map(lambda x: process_claims(x, level))
     df['predicted_claims'] = df['predicted_claims'].map(lambda x: process_claims(x, level))
+
+    # Penalize empty predictions (bad/failed responses) with a dummy class
+    df['predicted_claims'] = df['predicted_claims'].map(lambda x: ['9_9_9'] if not x else x)
     
     return df
 

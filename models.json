@@ -198,7 +198,24 @@
       "temperature": 0,
       "max_tokens": 4000,
       "category": "Together AI Models"
-
+    },
+    {
+      "id": 23,
+      "name": "CARDS-mini-OSS-20B",
+      "provider": "together_ai",
+      "model_id": "together_ai/discourselab/gpt-oss-20b-cards-mini-oss-2025-11-24-fc5f85c1-afa848a5",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (OSS)"
+    },
+    {
+      "id": 24,
+      "name": "CARDS-mini-OSS-20B-Base",
+      "provider": "together_ai",
+      "model_id": "together_ai/discourselab/gpt-oss-20b-cards-mini-oss-base-2024-12-05-4bda3bb1",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (OSS)"
     }
   ]
 }
