@@ -1,6 +1,7 @@
 """Metrics calculation and claim processing utilities for CARDS benchmark."""
 
 import json
+import os
 import pandas as pd
 from collections import defaultdict
 from typing import List, Dict, Any, Tuple
@@ -27,7 +28,7 @@ def process_claims(claim_list: List[str], level: int) -> List[str]:
     for claim in claim_list:
         parts = claim.split('_')
         if len(parts) < 3 or not all(p.isdigit() for p in parts[:3]):
-            X, Y, Z = '9', '9', '9'
+            continue
         else:
             X, Y, Z = parts[:3]
         claims[X][Y].add(Z)
@@ -257,18 +258,20 @@ def process_results_dataframe(
     # Add classification type
     df['classification_type'] = classification_type
     
-    # Process claims strings to lists
-    df['true_claims'] = df['true_claims'].str.replace(' ', ', ').map(eval)
-    df['final_claims'] = df['final_claims'].str.replace(' ', ', ').map(eval)
-    df['predicted_claims'] = df['predicted_claims'].str.replace(' ', ', ').map(eval)
+    # Process claims to lists
+    for col in ['true_claims', 'final_claims', 'predicted_claims']:
+        first = df[col].iloc[0]
+        if isinstance(first, str):
+            df[col] = df[col].str.replace(' ', ', ').map(eval)
+        else:
+            # Convert numpy arrays or other iterables to lists
+            df[col] = df[col].map(lambda x: list(x) if hasattr(x, '__iter__') and not isinstance(x, str) else x)
     
     # Process claims at specified level
     df['true_claims'] = df['true_claims'].map(lambda x: process_claims(x, level))
     df['final_claims'] = df['final_claims'].map(lambda x: process_claims(x, level))
     df['predicted_claims'] = df['predicted_claims'].map(lambda x: process_claims(x, level))
 
-    # Penalize empty predictions (bad/failed responses) with a dummy class
-    df['predicted_claims'] = df['predicted_claims'].map(lambda x: ['9_9_9'] if not x else x)
     
     return df
 
@@ -386,10 +389,61 @@ def run_full_evaluation() -> None:
         print(f"\n❌ \033[91mUnexpected error: {e}\033[0m")
 
 
+def run_file_evaluation(file_path: str) -> None:
+    """Run evaluation on a file path or directory of parquet files."""
+    import glob as gl
+
+    try:
+        final_claims_dict, true_claims_dict = load_claims_mappings()
+
+        # Collect files
+        if os.path.isdir(file_path):
+            files = sorted(gl.glob(os.path.join(file_path, '*.parquet')))
+            if not files:
+                print(f"❌ No parquet files found in {file_path}")
+                return
+            print(f"Found {len(files)} parquet files")
+        else:
+            files = [file_path]
+
+        # Load and concat
+        dfs = []
+        for f in files:
+            if f.endswith('.parquet'):
+                dfs.append(pd.read_parquet(f))
+            else:
+                dfs.append(pd.read_csv(f))
+        df = pd.concat(dfs, ignore_index=True)
+        print(f"Total rows: {len(df)}, Models: {df['model'].unique().tolist()}")
+
+        df = process_results_dataframe(
+            df, final_claims_dict, true_claims_dict, 'zeroshot'
+        )
+
+        metrics = compute_metrics_for_groups(df, column_name='final_claims')
+
+        key_cols = ['model', 'samples_f1', 'macro_f1', 'micro_f1', 'hamming_loss']
+        display_metrics_table(metrics[key_cols + ['subset']], "Key Metrics")
+
+    except Exception as e:
+        print(f"\n❌ \033[91mError: {e}\033[0m")
+
+
 def main():
     """Main function for running metrics calculation as a script."""
-    print("\n🚀 Running CARDS Metrics Evaluation...")
-    run_full_evaluation()
+    import argparse
+    parser = argparse.ArgumentParser(description='CARDS Metrics Evaluation')
+    parser.add_argument('--file', type=str, default='data/predictions',
+                        help='Path to predictions file or directory')
+    parser.add_argument('--full', action='store_true', help='Run full evaluation on all result files')
+    args = parser.parse_args()
+
+    if args.full:
+        print("\n🚀 Running Full CARDS Metrics Evaluation...")
+        run_full_evaluation()
+    else:
+        print(f"\n🚀 Evaluating {args.file}...")
+        run_file_evaluation(args.file)
 
 
 if __name__ == "__main__":

@@ -10,10 +10,14 @@ __pycache__/
 
 oss/
 predictions/
+archive_ft/
 
 cards-llm/
 workspace.ipynb
 data/evals/paper/
+
+.agents/
+.claude/
 
 # Distribution / packaging
 .Python

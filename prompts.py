@@ -12,6 +12,14 @@ codebook_list = list(df_codebook.xml_prompt_label.unique())
 
 codebook = "\n".join(codebook_list)
 
+# Slim codebook using short labels (for fine-tuned small models)
+slim_codebook_list = []
+for _, row in df_codebook.drop_duplicates('category_number').iterrows():
+    code = row['category_number']
+    label = row['short_label'] if pd.notna(row['short_label']) and str(row['short_label']).strip() else row['prompt_label']
+    slim_codebook_list.append(f'<{code}> {label}')
+slim_codebook = "\n".join(slim_codebook_list)
+
 system_instruction = """
 You are an expert in climate communication. Your task is to classify the given text into categories based on the provided codebook. This is a multi-label classification task.
 
@@ -121,12 +129,10 @@ You are an expert in climate communication. Your task is to classify the given t
     "review": "<yes/no>",
     "categories": [
       {{
-        "category": "<category_code, an XML tag>",
-        "text": "<text_associated_with_the_category>"
+        "category": "<category_code, an XML tag>"
       }},
       {{
-        "category": "<category_code, an XML tag>",
-        "text": "<text_associated_with_the_category>"
+        "category": "<category_code, an XML tag>"
       }}
       // ... additional categories as needed
     ]
@@ -147,6 +153,28 @@ prompt = """Let's work this out in a step by step way to be sure we have the rig
 text_prompt = """
 ### Text:
 {text}
+"""
+
+slim_system_instruction = """You are an expert in climate communication. Classify the given text into categories from the codebook. This is a multi-label classification task.
+
+### CODEBOOK:
+{codebook}
+
+### OUTPUT FORMAT:
+Return JSON:
+```json
+{{{{
+  "review": "<yes/no>",
+  "categories": [
+    {{{{"category": "<code>"}}}}
+  ]
+}}}}
+```
+
+Rules:
+- Use <0_0_0> if no relevant climate skepticism claim is detected. It is mutually exclusive with all other categories.
+- Return the most granular matching categories.
+- Only classify claims the text endorses, not describes.
 """
 
 cot_instruction = """

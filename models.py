@@ -2,6 +2,7 @@
 
 import json
 import re
+import yaml
 from typing import List, Dict, Any
 from pydantic import BaseModel
 import litellm
@@ -53,6 +54,10 @@ class ModelClient:
         )
         if model_config.extra_body:
             kwargs["extra_body"] = model_config.extra_body
+        if model_config.reasoning_effort:
+            kwargs["reasoning_effort"] = model_config.reasoning_effort
+        if model_config.allowed_openai_params:
+            kwargs["allowed_openai_params"] = model_config.allowed_openai_params
 
         response = litellm.completion(**kwargs)
 
@@ -71,15 +76,27 @@ class ResponseParser:
 
     def extract_classification_dict(self, response: str) -> Dict:
         """Extract classification dictionary from model response."""
+        # Try JSON first (for fine-tuned models that still output JSON)
         try:
             json_text = re.search(r'\{.*\}', response, re.DOTALL).group()
             return json.loads(json_text)
         except Exception:
-            try:
-                json_text = re.search(r'```json(.*)```', response, re.DOTALL).group(1)
-                return json.loads(json_text)
-            except Exception:
-                return self._convert_to_structured_output(response)
+            pass
+        try:
+            json_text = re.search(r'```json(.*)```', response, re.DOTALL).group(1)
+            return json.loads(json_text)
+        except Exception:
+            pass
+        # Try YAML
+        try:
+            yaml_text = re.search(r'```yaml(.*)```', response, re.DOTALL).group(1)
+            return yaml.safe_load(yaml_text)
+        except Exception:
+            pass
+        try:
+            return yaml.safe_load(response)
+        except Exception:
+            return self._convert_to_structured_output(response)
 
     def _convert_to_structured_output(self, text: str) -> Dict:
         """Convert text to structured output using LiteLLM."""

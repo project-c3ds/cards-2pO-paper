@@ -115,7 +115,8 @@
       "model_id": "gpt-5",
       "temperature": 1,
       "max_tokens": 4000,
-      "category": "OpenAI Base Models"
+      "category": "OpenAI Base Models",
+      "reasoning_effort": "low"
     },
     {
       "id": 14,
@@ -124,7 +125,8 @@
       "model_id": "gpt-5-mini",
       "temperature": 1,
       "max_tokens": 4000,
-      "category": "OpenAI Base Models"
+      "category": "OpenAI Base Models",
+      "reasoning_effort": "low"
     },
     {
       "id": 15,
@@ -133,7 +135,8 @@
       "model_id": "gpt-5-nano",
       "temperature": 1,
       "max_tokens": 4000,
-      "category": "OpenAI Base Models"
+      "category": "OpenAI Base Models",
+      "reasoning_effort": "low"
     },
     {
       "id": 16,
@@ -151,7 +154,9 @@
       "model_id": "together_ai/zai-org/GLM-5",
       "temperature": 0,
       "max_tokens": 4000,
-      "category": "Together AI Models"
+      "category": "Together AI Models",
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
     },
     {
       "id": 18,
@@ -161,7 +166,9 @@
       "temperature": 0,
       "max_tokens": 4000,
       "category": "Together AI Models",
-      "extra_body": {"chat_template_kwargs": {"enable_thinking": false}}
+      "extra_body": {"chat_template_kwargs": {"enable_thinking": false}},
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
     },
     {
       "id": 19,
@@ -170,7 +177,9 @@
       "model_id": "together_ai/MiniMaxAI/MiniMax-M2.5",
       "temperature": 0,
       "max_tokens": 4000,
-      "category": "Together AI Models"
+      "category": "Together AI Models",
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
     },
     {
       "id": 20,
@@ -179,7 +188,9 @@
       "model_id": "together_ai/moonshotai/Kimi-K2.5",
       "temperature": 0,
       "max_tokens": 4000,
-      "category": "Together AI Models"
+      "category": "Together AI Models",
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
     },
     {
       "id": 21,
@@ -188,7 +199,9 @@
       "model_id": "together_ai/openai/gpt-oss-120b",
       "temperature": 0,
       "max_tokens": 4000,
-      "category": "Together AI Models"
+      "category": "Together AI Models",
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
     },
     {
       "id": 22,
@@ -197,7 +210,9 @@
       "model_id": "together_ai/openai/gpt-oss-20b",
       "temperature": 0,
       "max_tokens": 4000,
-      "category": "Together AI Models"
+      "category": "Together AI Models",
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
     },
     {
       "id": 23,
@@ -206,16 +221,49 @@
       "model_id": "together_ai/discourselab/gpt-oss-20b-cards-mini-oss-2025-11-24-fc5f85c1-afa848a5",
       "temperature": 0,
       "max_tokens": 4000,
-      "category": "CARDS Fine-tuned Models (OSS)"
+      "category": "CARDS Fine-tuned Models (OSS)",
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
     },
     {
       "id": 24,
       "name": "CARDS-mini-OSS-20B-Base",
       "provider": "together_ai",
-      "model_id": "together_ai/discourselab/gpt-oss-20b-cards-mini-oss-base-2024-12-05-4bda3bb1",
+      "model_id": "together_ai/discourselab/gpt-oss-20b-cards-mini-oss-base-2024-12-05-4bda3bb1-1939e7fd",
       "temperature": 0,
       "max_tokens": 4000,
-      "category": "CARDS Fine-tuned Models (OSS)"
+      "category": "CARDS Fine-tuned Models (OSS)",
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
+    },
+    {
+      "id": 25,
+      "name": "Qwen3.5-2B",
+      "provider": "ollama",
+      "model_id": "ollama_chat/qwen3.5:2b",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "Ollama Models",
+      "reasoning_effort": "low",
+      "allowed_openai_params": ["reasoning_effort"]
+    },
+    {
+      "id": 26,
+      "name": "Gemma3-1B",
+      "provider": "ollama",
+      "model_id": "ollama_chat/gemma3:1b",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "Ollama Models"
+    },
+    {
+      "id": 27,
+      "name": "LFM-2.5-Thinking",
+      "provider": "ollama",
+      "model_id": "ollama_chat/lfm2.5-thinking",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "Ollama Models"
     }
   ]
 }

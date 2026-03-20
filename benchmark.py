@@ -188,7 +188,7 @@ class CARDSBenchmark:
         df_results['predicted_claims'] = df_results['classification_dict'].apply(
             lambda x: [
                 (t['category'] if isinstance(t, dict) else t).split('>')[0].replace('<', '')
-                for t in x.get('categories', [])
+                for t in (x or {}).get('categories', [])
             ]
         )
         
