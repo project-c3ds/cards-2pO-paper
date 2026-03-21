@@ -264,6 +264,17 @@
       "temperature": 0,
       "max_tokens": 4000,
       "category": "Ollama Models"
+    },
+    {
+      "id": 28,
+      "name": "CARDS-Qwen3.5-4B-SFT",
+      "provider": "hosted_vllm",
+      "model_id": "hosted_vllm/cards_qwen35_merged",
+      "api_base": "http://localhost:8000/v1",
+      "temperature": 0,
+      "max_tokens": 4000,
+      "category": "CARDS Fine-tuned Models (OSS)",
+      "use_slim_codebook": true
     }
   ]
 }

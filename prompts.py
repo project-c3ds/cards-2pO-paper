@@ -158,21 +158,120 @@ text_prompt = """
 slim_system_instruction = """You are an expert in climate communication. Classify the given text into categories from the codebook. This is a multi-label classification task.
 
 ### CODEBOOK:
-{codebook}
+<1_0_0> Global warming is not happening
+<1_1_0> Ice/permafrost/snow cover isn't melting
+<1_1_1> Antarctica is gaining ice/not warming
+<1_1_2> Greenland is gaining ice/not melting
+<1_1_3> Arctic sea ice isn't vanishing
+<1_1_4> Glaciers aren't vanishing
+<1_2_0> We're heading into an ice age/global cooling
+<1_3_0> Weather is cold/snowing
+<1_4_0> Climate hasn't warmed/changed over the last (few) decade(s)
+<1_5_0> Oceans are cooling/not warming
+<1_6_0> Sea level rise is exaggerated/not accelerating
+<1_7_0> Extreme weather isn't increasing/has happened before/isn't linked to climate change
+<1_8_0> They changed the name from 'global warming' to 'climate change'
+<1_9_0> Ocean pH is not falling
+<2_0_0> Human greenhouse gases are not causing climate change
+<2_1_0> It's natural cycles/variation
+<2_1_1> It's the sun/cosmic rays/astronomical
+<2_1_2> It's geological (includes volcanoes)
+<2_1_3> It's the ocean/internal variability
+<2_1_4> Climate has changed naturally/been warm in the past
+<2_2_0> It's non-greenhouse gas human climate forcings (aerosols, land use)
+<2_3_0> There's no evidence for greenhouse effect/carbon dioxide driving climate change
+<2_3_1> Carbon dioxide is just a trace gas
+<2_3_2> Greenhouse effect is saturated/logarithmic
+<2_3_3> Carbon dioxide lags/not correlated with climate change
+<2_3_4> Water vapor is the most powerful greenhouse gas
+<2_3_5> There's no tropospheric hot spot
+<2_3_6> CO2 is not rising.
+<2_3_6_1> CO2 was higher in the past
+<2_3_6_2> Human CO2 emissions are miniscule/not raising atmospheric CO2
+<3_0_0> Climate impacts/global warming is beneficial/not bad
+<3_1_0> Climate sensitivity is low/negative feedbacks reduce warming
+<3_2_0> Species/plants/reefs aren't showing climate impacts yet/are benefiting from climate change
+<3_2_1> Species can adapt to global warming
+<3_2_2> Polar bears are not in danger from climate change
+<3_2_3> Ocean acidification/coral impacts aren't serious
+<3_3_0> CO2 is beneficial/not a pollutant
+<3_3_1> CO2 is plant food
+<3_4_0> It's only a few degrees (or less)
+<3_5_0> Climate change does not contribute to human conflict/threaten national security
+<3_6_0> Climate change doesn't negatively impact health
+<4_0_0> Climate solutions are harmful or unnecessary
+<4_1_0> Climate solutions are harmful
+<4_1_1> Solutions increases costs
+<4_1_1_1> Policy harms competitiveness
+<4_1_1_2> Policy harms vulnerable members of society
+<4_1_1_3> Climate-friendly alternatives are too expensive
+<4_1_2> Policy weakens security
+<4_1_3> Solutions harm environment
+<4_1_3_1> Policy harms environment
+<4_1_3_2> Climate-friendly alternatives harm environment
+<4_1_4> Policy creates uncertainty
+<4_1_5> Policy limits freedom
+<4_2_0> Climate solutions are ineffective
+<4_2_1> Green economy won't work
+<4_2_2> Policy impact is negligible
+<4_2_3> One country is negligible
+<4_2_4> Other countries' emissions
+<4_2_6> Policies can be manipulated
+<4_2_7> Climate-friendly alternatives are ineffective
+<4_2_7_1> Not ready
+<4_2_7_2> Not enough
+<4_2_8> Markets are more efficient
+<4_2_9> Individuals are responsible
+<4_2_10> Future generations, technologies, and efficiencies will solve it
+<4_2_10_1> Future generations will fix it
+<4_2_10_2> Technology will fix it
+<4_2_11> Adaptation is the solution
+<4_2_12> Energy efficiency is enough
+<4_2_13> Removing CO2 is the solution
+<4_2_14> Other issues are more pressing
+<4_2_15> Cheaper to mitigate abroad
+<4_3_0> Solving climate change is too difficult
+<4_3_1> We're not ready for policy
+<4_3_2> It's too late to fix it
+<4_3_3> Low support
+<4_4_0> No need for more action
+<4_4_1> Already taking it seriously
+<4_4_2> Already doing enough
+<4_4_3> Already doing good
+<5_0_0> Climate-related science is uncertain/unsound/unreliable (data, methods & models)
+<5_1_0> There's no scientific consensus on climate/the science isn't settled
+<5_2_0> Proxy data is unreliable (includes hockey stick)
+<5_3_0> Temperature record is unreliable
+<5_4_0> Models are wrong/unreliable/uncertain
+<6_0_0> Climate scientists and proponents of climate action are alarmist, biased, wrong, hypocritical, corrupt, and/or politically motivated.
+<6_1_0> Climate movement is alarmist/wrong/political/biased/hypocritical (people or groups)
+<6_1_1> Climate movement is religion
+<6_1_2> Media (includes bloggers) is alarmist/wrong/political/biased
+<6_1_3> Politicians/government/UN are alarmist/wrong/political/biased
+<6_1_4> Environmentalists are alarmist/wrong/political/biased
+<6_1_5> Scientists/academics are alarmist/wrong/political/biased
+<6_2_0> Climate change (science or policy) is a conspiracy (deception)
+<7_0_0> We need fossil fuels
+<7_1_0> Fossil fuels are plentiful
+<7_2_0> Fossil fuels are good
+<7_2_1> Good for economic growth
+<7_2_2> Good for energy security
+<7_2_3> Our fossil fuels are clean
+<7_2_4> Fossil fuels are part of the solution
+<7_3_0> Fossil fuels are necessary
+<7_4_0> We have the right to use them
+<0_0_0> No Claim detected
 
 ### OUTPUT FORMAT:
-Return JSON:
-```json
-{{{{
-  "review": "<yes/no>",
-  "categories": [
-    {{{{"category": "<code>"}}}}
-  ]
-}}}}
+Reason step by step inside <think> tags, then list ALL matching category codes in YAML:
+```yaml
+categories:
+  - <code>
+  - ...
 ```
 
-Rules:
-- Use <0_0_0> if no relevant climate skepticism claim is detected. It is mutually exclusive with all other categories.
+### RULES:
+- Use 0_0_0 if no relevant climate skepticism claim is detected. It is mutually exclusive with all other categories.
 - Return the most granular matching categories.
 - Only classify claims the text endorses, not describes.
 """

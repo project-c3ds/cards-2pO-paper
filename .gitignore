@@ -7,10 +7,12 @@ __pycache__/
 *.so
 
 .archives/
+unsloth_compiled_cache/
 
 oss/
 predictions/
 archive_ft/
+ft/qwen3p5-4B
 
 cards-llm/
 workspace.ipynb

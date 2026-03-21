@@ -7,7 +7,7 @@ from typing import List
 
 from config import ConfigManager, ModelConfig, EvaluationConfig
 from benchmark import CARDSBenchmark
-from prompts import system_instruction, fewshot_instruction, prompt, codebook
+from prompts import system_instruction, fewshot_instruction, prompt, codebook, slim_system_instruction, slim_codebook
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -108,9 +108,11 @@ def main():
         openai_api_key=config_manager.openai_api_key,
         anthropic_api_key=config_manager.anthropic_api_key,
         system_instruction=system_instruction,
+        slim_system_instruction=slim_system_instruction,
         fewshot_instruction=fewshot_instruction,
         prompt=active_prompt,
-        codebook=codebook
+        codebook=codebook,
+        slim_codebook=slim_codebook
     )
     
     # Load few-shot data if needed

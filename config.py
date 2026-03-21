@@ -22,6 +22,8 @@ class ModelConfig:
     extra_body: Dict[str, Any] = field(default_factory=dict)
     reasoning_effort: str = None
     allowed_openai_params: List[str] = field(default_factory=list)
+    api_base: str = None
+    use_slim_codebook: bool = False
 
 
 
@@ -62,7 +64,9 @@ class ConfigManager:
                     max_tokens=model.get('max_tokens', 4000),
                     extra_body=model.get('extra_body', {}),
                     reasoning_effort=model.get('reasoning_effort'),
-                    allowed_openai_params=model.get('allowed_openai_params', [])
+                    allowed_openai_params=model.get('allowed_openai_params', []),
+                    api_base=model.get('api_base'),
+                    use_slim_codebook=model.get('use_slim_codebook', False)
                 )
                 for model in data['models']
             ]

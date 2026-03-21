@@ -52,6 +52,8 @@ class ModelClient:
             max_tokens=model_config.max_tokens,
             timeout=120,
         )
+        if model_config.api_base:
+            kwargs["api_base"] = model_config.api_base
         if model_config.extra_body:
             kwargs["extra_body"] = model_config.extra_body
         if model_config.reasoning_effort:
@@ -93,10 +95,28 @@ class ResponseParser:
             return yaml.safe_load(yaml_text)
         except Exception:
             pass
+        # Try extracting categories after </think> tag (slim/vLLM models)
         try:
-            return yaml.safe_load(response)
+            if '</think>' in response:
+                after_think = response.split('</think>')[-1].strip()
+            else:
+                after_think = response
+            # Look for "categories:" section specifically
+            cat_match = re.search(r'categories:\s*\n((?:\s*-\s*.+\n?)+)', after_think)
+            if cat_match:
+                cats = re.findall(r'-\s*([\d_]+)', cat_match.group(1))
+                if cats:
+                    return {"review": "no", "categories": [{"category": c} for c in cats]}
         except Exception:
-            return self._convert_to_structured_output(response)
+            pass
+        try:
+            parsed = yaml.safe_load(response)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            pass
+        # Last resort: return empty classification
+        return {"review": "no", "categories": [{"category": "0_0_0"}]}
 
     def _convert_to_structured_output(self, text: str) -> Dict:
         """Convert text to structured output using LiteLLM."""

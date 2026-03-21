@@ -20,9 +20,11 @@ class CARDSBenchmark:
         openai_api_key: str = None,
         anthropic_api_key: str = None,
         system_instruction: str = None,
+        slim_system_instruction: str = None,
         fewshot_instruction: str = None,
         prompt: str = None,
         codebook: str = None,
+        slim_codebook: str = None,
         db_path: str = "data/results.db"
     ):
         """Initialize the benchmark framework with API clients and prompts."""
@@ -31,12 +33,14 @@ class CARDSBenchmark:
         self.checkpoint = CheckpointStore(db_path)
         openai_client = OpenAI(api_key=openai_api_key) if openai_api_key else None
         self.embedding_manager = EmbeddingManager(openai_client)
-        
+
         # Store prompt templates
         self.system_instruction = system_instruction
+        self.slim_system_instruction = slim_system_instruction
         self.fewshot_instruction = fewshot_instruction
         self.prompt = prompt
         self.codebook = codebook
+        self.slim_codebook = slim_codebook
         
         # Template for text input
         self.text_template = """
@@ -48,9 +52,12 @@ class CARDSBenchmark:
         """Load few-shot examples for dynamic example selection."""
         self.embedding_manager.load_fewshot_data(fewshot_data_path)
     
-    def _build_prompt_messages(self, text: str, use_fewshot: bool = False) -> List[Dict[str, str]]:
+    def _build_prompt_messages(self, text: str, use_fewshot: bool = False, model_config: ModelConfig = None) -> List[Dict[str, str]]:
         """Build the complete prompt message sequence for the model."""
-        system_content = self.system_instruction.format(codebook=self.codebook)
+        if model_config and model_config.use_slim_codebook:
+            system_content = self.slim_system_instruction.format(codebook=self.slim_codebook)
+        else:
+            system_content = self.system_instruction.format(codebook=self.codebook)
 
         if use_fewshot:
             fewshot_examples = self.embedding_manager.get_dynamic_fewshot_examples(text)
@@ -68,7 +75,7 @@ class CARDSBenchmark:
         use_fewshot: bool = False
     ) -> Dict[str, Any]:
         """Evaluate a single text with a specific model."""
-        messages = self._build_prompt_messages(text, use_fewshot)
+        messages = self._build_prompt_messages(text, use_fewshot, model_config)
         response = self.model_client.get_model_response(messages, model_config, self.prompt)
 
         # Handle case where all retries failed
