@@ -7,7 +7,7 @@ from typing import List
 
 from config import ConfigManager, ModelConfig, EvaluationConfig
 from benchmark import CARDSBenchmark
-from prompts import system_instruction, fewshot_instruction, prompt, codebook, slim_system_instruction, slim_codebook
+from prompts import system_instruction, slim_system_instruction, fewshot_instruction, cot_trigger
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -103,16 +103,14 @@ def main():
     )
     
     # Initialize benchmark
-    active_prompt = "Classify the text." if args.no_cot else prompt
+    active_prompt = "Classify the text." if args.no_cot else cot_trigger
     benchmark = CARDSBenchmark(
         openai_api_key=config_manager.openai_api_key,
         anthropic_api_key=config_manager.anthropic_api_key,
         system_instruction=system_instruction,
         slim_system_instruction=slim_system_instruction,
         fewshot_instruction=fewshot_instruction,
-        prompt=active_prompt,
-        codebook=codebook,
-        slim_codebook=slim_codebook
+        prompt=active_prompt
     )
     
     # Load few-shot data if needed

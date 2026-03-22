@@ -23,8 +23,6 @@ class CARDSBenchmark:
         slim_system_instruction: str = None,
         fewshot_instruction: str = None,
         prompt: str = None,
-        codebook: str = None,
-        slim_codebook: str = None,
         db_path: str = "data/results.db"
     ):
         """Initialize the benchmark framework with API clients and prompts."""
@@ -39,8 +37,6 @@ class CARDSBenchmark:
         self.slim_system_instruction = slim_system_instruction
         self.fewshot_instruction = fewshot_instruction
         self.prompt = prompt
-        self.codebook = codebook
-        self.slim_codebook = slim_codebook
         
         # Template for text input
         self.text_template = """
@@ -55,9 +51,9 @@ class CARDSBenchmark:
     def _build_prompt_messages(self, text: str, use_fewshot: bool = False, model_config: ModelConfig = None) -> List[Dict[str, str]]:
         """Build the complete prompt message sequence for the model."""
         if model_config and model_config.use_slim_codebook:
-            system_content = self.slim_system_instruction.format(codebook=self.slim_codebook)
+            system_content = self.slim_system_instruction
         else:
-            system_content = self.system_instruction.format(codebook=self.codebook)
+            system_content = self.system_instruction
 
         if use_fewshot:
             fewshot_examples = self.embedding_manager.get_dynamic_fewshot_examples(text)
