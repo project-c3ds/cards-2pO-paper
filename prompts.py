@@ -32,9 +32,8 @@ _instruction_template = """You are an expert in climate communication. Your task
 1. **Hierarchical Classification**:
    - The codebook is hierarchical. Superclaims end with `_0_0`, subclaims end with `_0`.
    - First check if the text fits `0_0_0` (no relevant claim). If so, assign only that category.
-   - Otherwise, scan every superclaim group (1_ through 7_) for relevance before evaluating any in detail.
-   - For each relevant group, evaluate subclaims at the most granular level.
-   - Always return the most granular matching level.
+   - Otherwise, scan every superclaim group (1_ through 7_) and list all plausible codes.
+   - Then verify each candidate — keep or remove — to arrive at the final set.
 
 2. **Precision and Recall**:
    - Do not leave any relevant claim unassigned.
@@ -65,10 +64,8 @@ Reason inside <think> tags following this structure, then output YAML:
 <think>
 1. CLAIMS: Direct quotes only. No paraphrasing, no commentary, no analysis.
 2. CONTEXT: One line. Text type, tone, intent. Sincere or satire/irony?
-3. SCAN: One line per superclaim group (1_ through 7_). Relevant or not relevant.
-4. EVALUATE: One entry per relevant claim using this format:
-   - Claim N → [code]: [what it means + endorsed or not]. [why not the closest alternative].
-5. VERIFY: Codes consistent together? Granularity correct? Overlaps missed?
+3. SCAN: Go through each superclaim group (1_ through 7_). For each group, state "not relevant" or list all plausible codes.
+4. VERIFY: One line per code from SCAN. Format: "[code]: KEEP/REMOVE — [max 10 words why]." Then state final codes.
 </think>
 ```yaml
 categories:
@@ -77,8 +74,7 @@ categories:
 
 STRICT RULES:
 - All reasoning must be inside <think> tags. Nothing after </think> except the YAML block.
-- Match depth to complexity. Simple texts get short steps.
-- Never deliberate between codes in EVALUATE. Pick one, justify it, move on.
+- Be concise. VERIFY entries must be one line each.
 """
 
 system_instruction = _instruction_template.format(codebook=codebook)
@@ -108,5 +104,36 @@ recot_trigger = """The true labels above are the correct classification. Generat
 
 Rules:
 - Write as a confident expert who has never seen the true labels. Do not mention or hint at them.
+- In SCAN, include the true labels among the plausible candidates. In VERIFY, eliminate the wrong ones confidently.
 - Be decisive. Single pass, no second-guessing, no repetition.
 - Final classification must exactly match the true labels."""
+
+# ---------------------------------------------------------------------------
+# Synthetic data generation prompt
+# ---------------------------------------------------------------------------
+
+synthetic_prompt = """You are an expert in climate communication and disinformation research.
+
+### FULL TAXONOMY:
+{codebook}
+
+### TARGET CATEGORY:
+Code: {target_code}
+Description: {target_description}
+
+### EXISTING EXAMPLES FOR THIS CATEGORY:
+{examples}
+
+### TASK:
+Generate {n} new realistic texts that express the target category claim. Each text must:
+
+1. Include the target category ({target_code}) as one of its claims
+2. Naturally combine with other claims from the taxonomy (2-5 total labels per text)
+3. Sound like real content — social media posts, opinion pieces, congressional testimony, news comments, blog excerpts, forum posts
+4. Vary in length (1-6 sentences), tone (formal, casual, sarcastic, angry, concerned), and source type
+5. Endorse/promote the claims, not just describe or report them
+6. Be distinct from the existing examples — different framing, context, arguments
+
+Assign labels at the most granular level only. Do not include parent codes if a subclaim applies.
+
+Return as a JSON array of objects: {{"text": "...", "true_claims": ["code1", "code2", ...]}}"""
