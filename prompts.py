@@ -81,6 +81,58 @@ system_instruction = _instruction_template.format(codebook=codebook)
 slim_system_instruction = _instruction_template.format(codebook=slim_codebook)
 
 # ---------------------------------------------------------------------------
+# Non-RECoT instruction (no reasoning, YAML only)
+# ---------------------------------------------------------------------------
+
+_norecot_instruction_template = """You are an expert in climate communication. Your task is to classify the given text into categories based on the provided codebook. This is a multi-label classification task.
+
+### CODEBOOK:
+{codebook}
+
+### INSTRUCTIONS:
+
+1. **Hierarchical Classification**:
+   - The codebook is hierarchical. Superclaims end with `_0_0`, subclaims end with `_0`.
+   - First check if the text fits `0_0_0` (no relevant claim). If so, assign only that category.
+   - Otherwise, scan every superclaim group (1_ through 7_) and list all plausible codes.
+   - Then verify each candidate — keep or remove — to arrive at the final set.
+
+2. **Precision and Recall**:
+   - Do not leave any relevant claim unassigned.
+   - Do not assign any irrelevant claim.
+
+3. **Irrelevant Text**:
+   - If the text does not express climate skepticism, promote fossil fuels, or attack renewables, use `0_0_0`.
+   - `0_0_0` is mutually exclusive with all other categories.
+
+4. **Description vs Endorsement**:
+   - Only classify claims the text actively endorses or promotes.
+   - Meta-commentary or criticism of skeptical arguments should be `0_0_0`.
+
+5. **Granularity Rule**:
+   - When a text matches both a parent and its subcategories, only include the most specific subcategories.
+   - When unsure between a parent and subclaim, ask: does the text explicitly make the subclaim's specific argument? If yes, use the subclaim. If the text is broader or vaguer, use the parent. Do not deliberate — decide and move on.
+
+6. **Cross-Reference Hints**:
+   - Economic impacts (4_X_X) often overlap with fossil fuel benefits (7_X_X).
+   - Science uncertain (5_X_X) often overlaps with proponents corrupt (6_X_X).
+   - Global cooling / natural variation: also check natural drivers (2_1_0, 2_1_1, 2_1_3).
+   - Renewable energy feasibility: check both 4_2_7_2 and 7_3_0.
+   - Fossil fuel benefits: check all 7_X_X claims.
+
+### OUTPUT FORMAT:
+Return only a YAML block with the matching categories. No explanation, no reasoning.
+
+```yaml
+categories:
+  - <category_code>
+```
+"""
+
+norecot_system_instruction = _norecot_instruction_template.format(codebook=codebook)
+slim_norecot_system_instruction = _norecot_instruction_template.format(codebook=slim_codebook)
+
+# ---------------------------------------------------------------------------
 # Few-shot instruction (appended to system instruction when enabled)
 # ---------------------------------------------------------------------------
 
@@ -105,6 +157,21 @@ recot_trigger = """The true labels above are the correct classification. Generat
 Rules:
 - Write as a confident expert who has never seen the true labels. Do not mention or hint at them.
 - In SCAN, include the true labels among the plausible candidates. In VERIFY, eliminate the wrong ones confidently.
+- Be decisive. Single pass, no second-guessing, no repetition.
+- Final classification must exactly match the true labels."""
+
+# Hard negative RECoT trigger: used when generating reasoning for hard negatives.
+# Tells the teacher to explicitly address why the confused category does NOT apply.
+hard_negative_recot_trigger = """The true labels above are the correct classification. A fine-tuned model incorrectly predicted {confused_category} for this text.
+
+Generate expert-level reasoning that:
+1. Arrives at the correct labels (0_0_0)
+2. In SCAN, explicitly considers {confused_category} as a plausible candidate
+3. In VERIFY, confidently explains why {confused_category} does NOT apply — focus on the distinction between describing/reporting vs endorsing/promoting
+
+Rules:
+- Write as a confident expert who has never seen the true labels. Do not mention or hint at them.
+- In SCAN, include {confused_category} among the plausible candidates. In VERIFY, eliminate it with a clear reason.
 - Be decisive. Single pass, no second-guessing, no repetition.
 - Final classification must exactly match the true labels."""
 
@@ -137,3 +204,40 @@ Generate {n} new realistic texts that express the target category claim. Each te
 Assign labels at the most granular level only. Do not include parent codes if a subclaim applies.
 
 Return as a JSON array of objects: {{"text": "...", "true_claims": ["code1", "code2", ...]}}"""
+
+# ---------------------------------------------------------------------------
+# Hard negative generation prompt (for 0_0_0 boundary training)
+# ---------------------------------------------------------------------------
+
+hard_negative_prompt = """You are an expert in climate communication and disinformation research.
+
+### FULL TAXONOMY:
+{codebook}
+
+### CONTEXT:
+A fine-tuned model is over-predicting climate skepticism claims on texts that are actually neutral (0_0_0). The model falsely triggers on texts that DISCUSS these topics without ENDORSING skeptical positions:
+
+{confused_categories}
+
+### EXAMPLES OF MODEL ERRORS:
+These are texts labeled 0_0_0 by human experts, but the model incorrectly classified them:
+{error_examples}
+
+### TASK:
+Generate {n} new realistic texts that:
+
+1. Discuss the same topics (energy policy, fossil fuels, climate policy, renewables) but are genuinely NEUTRAL (0_0_0)
+2. Describe, report, or debate these topics WITHOUT endorsing climate skepticism, promoting fossil fuels, or attacking renewables
+3. Include language that could TRICK a model into predicting skepticism codes — mentions of fossil fuels, energy independence, policy costs, scientific debate — but the text does NOT actually endorse those positions
+4. Sound like real congressional testimony, news reporting, policy analysis, or academic discussion
+5. Vary in length (1-6 sentences), tone, and framing
+6. Cover these styles:
+   - Factual reporting about energy/climate
+   - Pro-climate action statements that mention fossil fuels
+   - Policy debate that discusses costs without opposing climate action
+   - Scientific discussion that acknowledges uncertainty without denying climate change
+   - Criticism of fossil fuel industry (the opposite of endorsement)
+
+All texts should be labeled 0_0_0. Do NOT generate texts that actually endorse skepticism.
+
+Return as a JSON array of objects: {{"text": "...", "true_claims": ["0_0_0"]}}"""""

@@ -18,20 +18,30 @@ from tqdm import tqdm
 
 from config import ConfigManager, ModelConfig
 from models import ModelClient
-from prompts import system_instruction, cot_trigger, recot_trigger
+from prompts import system_instruction, cot_trigger, recot_trigger, hard_negative_recot_trigger
 
 
-def build_messages(text: str, true_labels: list) -> list:
+def build_messages(text: str, true_labels: list, confused_category: str = None) -> list:
     """Build RECoT messages: same system instruction as inference + text with true labels + recot trigger."""
+    if confused_category:
+        trigger = hard_negative_recot_trigger.format(confused_category=confused_category)
+    else:
+        trigger = recot_trigger
     return [
-        {"role": "system", "content": system_instruction},
-        {"role": "user", "content": f"### Text:\n{text}\n\n### True Labels:\n{true_labels}\n\n{recot_trigger}"},
+        {"role": "system", "content": [
+            {
+                "type": "text",
+                "text": system_instruction,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]},
+        {"role": "user", "content": f"### Text:\n{text}\n\n### True Labels:\n{true_labels}\n\n{trigger}"},
     ]
 
 
-def generate_one(client: ModelClient, model_config: ModelConfig, text: str, true_labels: list) -> dict:
+def generate_one(client: ModelClient, model_config: ModelConfig, text: str, true_labels: list, confused_category: str = None) -> dict:
     """Generate RECoT reasoning for a single example. Returns raw API response dict."""
-    messages = build_messages(text, true_labels)
+    messages = build_messages(text, true_labels, confused_category)
     return client.get_model_response(messages, model_config, cot_trigger)
 
 
@@ -47,9 +57,12 @@ def parse_labels(val):
 
 
 def load_data(path: str, text_col: str = "text", labels_col: str = "true_claims") -> list[dict]:
-    """Load CSV and return list of dicts with text and parsed labels."""
-    df = pd.read_csv(path)
-    df[labels_col] = df[labels_col].apply(parse_labels)
+    """Load CSV or JSONL and return list of dicts with text and parsed labels."""
+    if path.endswith('.jsonl'):
+        df = pd.read_json(path, lines=True)
+    else:
+        df = pd.read_csv(path)
+        df[labels_col] = df[labels_col].apply(parse_labels)
     return df.to_dict("records")
 
 
@@ -61,15 +74,36 @@ def run_batch(
     labels_col: str = "true_claims",
     concurrency: int = 5,
 ):
-    """Process all examples across all models, writing results to JSONL."""
+    """Process all examples across all models, writing results to JSONL. Resumes from existing output."""
     client = ModelClient()
-    total = len(data) * len(model_configs)
+
+    # Check already processed texts for resume support
+    already_done = set()
+    if os.path.exists(output_path):
+        with open(output_path) as f:
+            for line in f:
+                try:
+                    row = json.loads(line)
+                    already_done.add(row["text"][:200])  # use first 200 chars as key
+                except Exception:
+                    pass
+    if already_done:
+        print(f"Resuming — {len(already_done)} already processed, skipping them")
+
+    remaining = [row for row in data if row[text_col][:200] not in already_done]
+    total = len(remaining) * len(model_configs)
+    if total == 0:
+        print("All examples already processed. Nothing to do.")
+        return
+
+    print(f"Processing {len(remaining)} remaining examples ({len(data) - len(remaining)} skipped)")
 
     with open(output_path, "a") as f, ThreadPoolExecutor(max_workers=concurrency) as pool:
         futures = {}
-        for row in data:
+        for row in remaining:
             for mc in model_configs:
-                fut = pool.submit(generate_one, client, mc, row[text_col], row[labels_col])
+                confused = row.get("source_category")
+                fut = pool.submit(generate_one, client, mc, row[text_col], row[labels_col], confused)
                 futures[fut] = (row, mc.name)
 
         for fut in tqdm(as_completed(futures), total=total, desc="RECoT"):
@@ -78,11 +112,13 @@ def run_batch(
                 result = fut.result()
                 out = {
                     "text": row[text_col],
-                    "true_labels": row[labels_col],
+                    "true_claims": row[labels_col],
                     "model": model_name,
                     "response": result["response"],
                     "usage": result["usage"],
                 }
+                if row.get("source_category"):
+                    out["source_category"] = row["source_category"]
                 f.write(json.dumps(out, ensure_ascii=False) + "\n")
                 f.flush()
             except Exception as e:
