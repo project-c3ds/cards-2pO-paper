@@ -66,12 +66,25 @@ def parse_claims_from_response(response):
     return ['0_0_0']
 
 
-def prepare_train_splits():
+def prepare_train_splits(extra_files=None):
     path = os.path.join(DATA_DIR, 'training_recot_opus.jsonl')
     with open(path) as f:
         raw = [json.loads(line) for line in f]
+    print(f"Loaded {len(raw)} RECoT training samples from training_recot_opus.jsonl")
 
-    print(f"Loaded {len(raw)} RECoT training samples")
+    # Load additional training data files (e.g., hard negatives)
+    if extra_files:
+        for extra_path in extra_files:
+            full_path = os.path.join(DATA_DIR, extra_path) if not os.path.isabs(extra_path) else extra_path
+            with open(full_path) as f:
+                extra = [json.loads(line) for line in f]
+            # Normalize key names
+            for r in extra:
+                if 'true_labels' in r and 'true_claims' not in r:
+                    r['true_claims'] = r.pop('true_labels')
+            raw.extend(extra)
+            print(f"  + {len(extra)} from {extra_path}")
+        print(f"  = {len(raw)} total training samples")
 
     # Extract primary label for stratification
     primary_labels = []
@@ -152,15 +165,26 @@ def prepare_eval_splits():
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description="Prepare CARDS dataset splits")
+    parser.add_argument("--extra", nargs="+", default=[],
+                        help="Additional JSONL training data files to combine (e.g., hard_negatives_recot.jsonl)")
+    parser.add_argument("--skip-eval", action="store_true",
+                        help="Skip regenerating val/test splits (they don't change)")
+    args = parser.parse_args()
+
     print("=" * 60)
     print("Preparing CARDS dataset splits")
     print("=" * 60)
 
     print("\n--- Training splits (stratified 90/10) ---")
-    prepare_train_splits()
+    prepare_train_splits(extra_files=args.extra if args.extra else None)
 
-    print("\n--- Evaluation splits (stratified 30/70) ---")
-    prepare_eval_splits()
+    if not args.skip_eval:
+        print("\n--- Evaluation splits (stratified 30/70) ---")
+        prepare_eval_splits()
+    else:
+        print("\n--- Skipping eval splits (unchanged) ---")
 
     print("\n" + "=" * 60)
     print("Done. Files written to:", DATA_DIR)

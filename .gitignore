@@ -220,3 +220,5 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+cards_qwen35_*/
+cards_qwen35_*/
