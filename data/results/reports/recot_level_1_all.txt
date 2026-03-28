@@ -1,4 +1,4 @@
-Classification Report — RECoT — Level 1 (min_support=3)
+Classification Report — RECoT — Level 1 (min_support=0)
 ================================================================================
 
               precision    recall  f1-score   support

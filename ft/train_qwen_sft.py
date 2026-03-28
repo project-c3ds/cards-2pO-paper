@@ -41,6 +41,7 @@ MODELS = {
     "0.8b": "Qwen/Qwen3.5-0.8B",
     "2b": "Qwen/Qwen3.5-2B",
     "4b": "Qwen/Qwen3.5-4B",
+    "9b": "Qwen/Qwen3.5-9B",
     "27b": "Qwen/Qwen3.5-27B",
 }
 
