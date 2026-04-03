@@ -2,9 +2,12 @@
 Generate metrics_summary.md and metrics_summary.json from all result JSONL files.
 
 Usage:
-    python generate_report.py
+    python generate_report.py              # default: val split
+    python generate_report.py --split test
+    python generate_report.py --split val
 """
 
+import argparse
 import json
 import os
 import re
@@ -20,7 +23,12 @@ from sklearn.preprocessing import MultiLabelBinarizer
 # ---------------------------------------------------------------------------
 # Config: variant key -> (jsonl filename, display label, training data desc)
 # ---------------------------------------------------------------------------
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), "data", "results", "val")
+parser = argparse.ArgumentParser()
+parser.add_argument("--split", default="val", choices=["val", "test"])
+args = parser.parse_args()
+
+BASE_DIR = os.path.dirname(__file__)
+RESULTS_DIR = os.path.join(BASE_DIR, "data", "results", args.split)
 REPORTS_DIR = os.path.join(RESULTS_DIR, "reports")
 
 VARIANTS = OrderedDict([
@@ -45,7 +53,7 @@ VARIANTS = OrderedDict([
         "training_data": "1791",
     }),
     ("4b_recot_hn", {
-        "file": "cards_qwen35_4b_recot_full_hn.jsonl",
+        "file": ["cards_qwen35_4b_hn_recot_full.jsonl", "cards_qwen35_4b_recot_full_hn.jsonl"],
         "label": "Qwen3.5-4B RECoT+HN",
         "training_data": "1791+542 HN",
     }),
@@ -121,9 +129,15 @@ def main():
     summary = OrderedDict()
 
     for key, cfg in VARIANTS.items():
-        path = os.path.join(RESULTS_DIR, cfg["file"])
-        if not os.path.exists(path):
-            print(f"  Skipping {key}: {cfg['file']} not found")
+        filenames = cfg["file"] if isinstance(cfg["file"], list) else [cfg["file"]]
+        path = None
+        for fname in filenames:
+            candidate = os.path.join(RESULTS_DIR, fname)
+            if os.path.exists(candidate):
+                path = candidate
+                break
+        if path is None:
+            print(f"  Skipping {key}: none of {filenames} found")
             continue
 
         df = pd.read_json(path, lines=True)
@@ -183,7 +197,7 @@ def main():
         json.dump(summary, f, indent=2)
 
     # Generate Markdown
-    lines = ["# CARDS Qwen3.5 — Full Model Comparison\n"]
+    lines = [f"# CARDS Qwen3.5 — Full Model Comparison ({args.split} set)\n"]
 
     # Overview table
     lines.append("| Variant | Training Data | Parse Failures |")
