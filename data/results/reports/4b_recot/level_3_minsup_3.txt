@@ -1,4 +1,4 @@
-Classification Report — RECoT — Level 3 (min_support=3)
+Classification Report — Qwen3.5-4B RECoT — Level 3 (min_support=3)
 ================================================================================
 
               precision    recall  f1-score   support

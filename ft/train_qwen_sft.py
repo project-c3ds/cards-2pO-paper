@@ -118,7 +118,10 @@ EVAL_FILE = "cards_train_eval.jsonl" if args.recot else "cards_train_eval_noreco
 print(f"[1/7] Loading {BASE_MODEL}...")
 start = time.time()
 
-model, tokenizer = FastLanguageModel.from_pretrained(
+# Use model parallelism for large models (27B+)
+MULTI_GPU = MODEL_SIZE in ("27b",)
+
+load_kwargs = dict(
     model_name=BASE_MODEL,
     max_seq_length=MAX_SEQ_LENGTH,
     load_in_4bit=False,
@@ -126,6 +129,11 @@ model, tokenizer = FastLanguageModel.from_pretrained(
     load_in_16bit=True,
     full_finetuning=False,
 )
+if MULTI_GPU:
+    load_kwargs["device_map"] = "balanced"
+    print(f"  Multi-GPU: device_map=balanced")
+
+model, tokenizer = FastLanguageModel.from_pretrained(**load_kwargs)
 
 model = FastLanguageModel.get_peft_model(
     model,
@@ -184,8 +192,8 @@ config = SFTConfig(
     hub_private_repo=True,
 
     num_train_epochs=3,
-    per_device_train_batch_size=2,
-    gradient_accumulation_steps=4,
+    per_device_train_batch_size=1 if MODEL_SIZE == "27b" else 2,
+    gradient_accumulation_steps=8 if MODEL_SIZE == "27b" else 4,
     learning_rate=2e-4,
     max_length=MAX_SEQ_LENGTH,
 
