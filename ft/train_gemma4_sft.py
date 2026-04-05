@@ -1,13 +1,25 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "unsloth",
+#     "datasets",
+#     "trl>=0.12.0",
+#     "huggingface_hub[hf_transfer]",
+#     "tensorboard",
+#     "transformers>=5.2.0",
+# ]
+# ///
+
 """
-Train Gemma-4-31B with Unsloth LoRA on single H200 GPU.
+CARDS Gemma4 SFT Training
 
 Usage:
-    pip install unsloth datasets "trl>=0.12.0" "huggingface_hub[hf_transfer]" tensorboard
-    huggingface-cli login
-    tmux new -d -s train "python train_gemma4_sft.py 2>&1 | tee train.log"
-    tmux attach -t train
+    python train_gemma4_sft.py --model e4b
+    python train_gemma4_sft.py --model 31b
+    python train_gemma4_sft.py --model e4b --org c3ds
 """
 
+import argparse
 import os
 import sys
 import time
@@ -15,6 +27,38 @@ import time
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
+# ---------------------------------------------------------------------------
+# CLI args
+# ---------------------------------------------------------------------------
+MODELS = {
+    "e2b": "unsloth/gemma-4-E2B-it",
+    "e4b": "unsloth/gemma-4-E4B-it",
+    "31b": "unsloth/gemma-4-31B-it",
+}
+
+parser = argparse.ArgumentParser(description="CARDS Gemma4 SFT Training")
+parser.add_argument("--model", type=str, default="e4b", choices=MODELS.keys(),
+                    help="Model size (default: e4b)")
+parser.add_argument("--org", type=str, default="iRanadheer",
+                    help="HuggingFace org/user for model repo (default: iRanadheer)")
+parser.add_argument("--merge-and-push", action="store_true", default=False,
+                    help="Merge LoRA with base model and push full model to Hub")
+args = parser.parse_args()
+
+MODEL_SIZE = args.model
+BASE_MODEL = MODELS[MODEL_SIZE]
+VARIANT = f"gemma4_{MODEL_SIZE}_recot_full"
+
+print(f"{'='*60}")
+print(f"  Variant: {VARIANT}")
+print(f"  Base model: {BASE_MODEL}")
+print(f"  Org: {args.org}")
+print(f"  Merge and push: {args.merge_and_push}")
+print(f"{'='*60}\n")
+
+# ---------------------------------------------------------------------------
+# Setup
+# ---------------------------------------------------------------------------
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 import subprocess
@@ -26,21 +70,24 @@ if torch.cuda.is_available():
     print(f"GPU: {torch.cuda.get_device_name(0)}")
     print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
+from huggingface_hub import login
+token = os.environ.get("HF_TOKEN")
+if token:
+    login(token=token)
+
 from unsloth import FastLanguageModel
 from datasets import load_dataset
 from trl import SFTTrainer, SFTConfig
 
-HF_USERNAME = "iRanadheer"
-DATASET_REPO = f"{HF_USERNAME}/cards_sft_dataset"
-MODEL_REPO = f"{HF_USERNAME}/cards_gemma4_31b_recot_full"
-BASE_MODEL = "unsloth/gemma-4-31B-it"
+DATASET_REPO = "iRanadheer/cards_sft_dataset"
+MODEL_REPO = f"{args.org}/cards_{VARIANT}"
 MAX_SEQ_LENGTH = 4096
-OUTPUT_DIR = "cards_gemma4_31b_recot_full"
+OUTPUT_DIR = f"cards_{VARIANT}"
 
 # ---------------------------------------------------------------------------
 # 1. Load model
 # ---------------------------------------------------------------------------
-print("[1/5] Loading Gemma-4-31B-IT...")
+print(f"[1/5] Loading {BASE_MODEL}...")
 start = time.time()
 
 model, tokenizer = FastLanguageModel.from_pretrained(
@@ -75,8 +122,7 @@ train_dataset = load_dataset(DATASET_REPO, data_files="cards_train.jsonl", split
 eval_dataset = load_dataset(DATASET_REPO, data_files="cards_train_eval.jsonl", split="train", token=HF_TOKEN)
 print(f"Train: {len(train_dataset)}, Eval: {len(eval_dataset)}")
 
-# Gemma 4 uses standard system/user/assistant roles (unlike Gemma 3 which used "model")
-# No conversion needed — our dataset already uses these roles.
+# Gemma 4 uses standard system/user/assistant roles
 def apply_template(examples):
     texts = []
     for msgs in examples["messages"]:
@@ -97,9 +143,9 @@ print(f"Sample (first 200 chars): {train_dataset[0]['text'][:200]}")
 print(f"Dataset ready in {time.time() - start:.1f}s")
 
 # ---------------------------------------------------------------------------
-# 3. Configure trainer
+# 3. Configure trainer (same hyperparams across all sizes for fair comparison)
 # ---------------------------------------------------------------------------
-print("\n[3/5] Configuring trainer...")
+print(f"\n[3/5] Configuring trainer...")
 
 config = SFTConfig(
     output_dir=OUTPUT_DIR,
@@ -133,7 +179,7 @@ config = SFTConfig(
     bf16=True,
 
     report_to=["tensorboard"],
-    run_name="gemma4-31b-sft-recot-full",
+    run_name=f"cards-{VARIANT}",
 )
 
 trainer = SFTTrainer(
@@ -183,7 +229,22 @@ except Exception as e:
     api = HfApi()
     api.create_repo(MODEL_REPO, private=True, exist_ok=True)
     api.upload_folder(folder_path=OUTPUT_DIR, repo_id=MODEL_REPO, repo_type="model",
-                      commit_message="Upload Gemma 4 31B model")
+                      commit_message=f"Upload {VARIANT} model")
     print(f"\nModel saved: https://huggingface.co/{MODEL_REPO}")
 
-print(f"\nDone! Training complete.")
+if args.merge_and_push:
+    MERGED_REPO = f"{args.org}/cards_{VARIANT}_merged"
+    print(f"\nMerging LoRA and pushing full model to {MERGED_REPO}...")
+    try:
+        merged_dir = f"{OUTPUT_DIR}_merged"
+        model.save_pretrained_merged(merged_dir, tokenizer)
+        from huggingface_hub import HfApi
+        api = HfApi()
+        api.create_repo(MERGED_REPO, private=True, exist_ok=True)
+        api.upload_folder(folder_path=merged_dir, repo_id=MERGED_REPO, repo_type="model",
+                          commit_message=f"Upload merged {VARIANT} model")
+        print(f"  Merged model saved: https://huggingface.co/{MERGED_REPO}")
+    except Exception as e:
+        print(f"  Merge+push failed: {e}")
+
+print(f"\nDone! Training complete ({VARIANT}).")

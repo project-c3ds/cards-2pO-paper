@@ -67,6 +67,66 @@ VARIANTS = OrderedDict([
         "label": "Qwen3.5-27B RECoT",
         "training_data": "1791",
     }),
+    ("gpt4o_mini", {
+        "file": "gpt-4o-mini.jsonl",
+        "label": "GPT-4o-mini",
+        "training_data": "—",
+    }),
+    ("cards_mini_opus", {
+        "file": "cards-mini-opus.jsonl",
+        "label": "CARDS-mini-opus",
+        "training_data": "—",
+    }),
+    ("cards_mini_sonnet", {
+        "file": "cards-mini-sonnet.jsonl",
+        "label": "CARDS-mini-sonnet",
+        "training_data": "—",
+    }),
+    ("08b_base", {
+        "file": "qwen35-08b.jsonl",
+        "label": "Qwen3.5-0.8B Base",
+        "training_data": "—",
+    }),
+    ("2b_base", {
+        "file": "qwen35-2b.jsonl",
+        "label": "Qwen3.5-2B Base",
+        "training_data": "—",
+    }),
+    ("4b_base", {
+        "file": "qwen35-4b.jsonl",
+        "label": "Qwen3.5-4B Base",
+        "training_data": "—",
+    }),
+    ("9b_base", {
+        "file": "qwen35-9b.jsonl",
+        "label": "Qwen3.5-9B Base",
+        "training_data": "—",
+    }),
+    ("27b_base", {
+        "file": "qwen35-27b.jsonl",
+        "label": "Qwen3.5-27B Base",
+        "training_data": "—",
+    }),
+    ("gemma4_4b_base", {
+        "file": "gemma4-4b.jsonl",
+        "label": "Gemma4-E4B Base",
+        "training_data": "—",
+    }),
+    ("gemma4_31b_base", {
+        "file": "gemma4-31b.jsonl",
+        "label": "Gemma4-31B Base",
+        "training_data": "—",
+    }),
+    ("gemma4_e4b_recot", {
+        "file": "cards-gemma4-e4b.jsonl",
+        "label": "Gemma4-E4B RECoT",
+        "training_data": "1791",
+    }),
+    ("gemma4_31b_recot", {
+        "file": "cards-gemma4-31b.jsonl",
+        "label": "Gemma4-31B RECoT",
+        "training_data": "1791",
+    }),
 ])
 
 MIN_SUPPORT_THRESHOLDS = [0, 3]  # 0 = all labels
@@ -82,7 +142,8 @@ def parse_response(response):
         after_think = response
     cat_match = re.search(r'categories:\s*\n((?:\s*-\s*.+\n?)+)', after_think)
     if cat_match:
-        return re.findall(r'-\s*([\d_]+)', cat_match.group(1))
+        # Handle both <0_0_0> and 0_0_0 formats
+        return re.findall(r'-\s*<?(\d[\d_]+\d)>?', cat_match.group(1))
     return []
 
 
@@ -141,9 +202,15 @@ def main():
             continue
 
         df = pd.read_json(path, lines=True)
-        # Reparse predictions from response if pred_claims missing or empty
-        if 'pred_claims' not in df.columns:
-            df['pred_claims'] = df['response'].map(parse_response)
+        # Always reparse predictions from response
+        def extract_preds(row):
+            resp = row.get('response', '')
+            if isinstance(resp, list):
+                # Base models store predictions as list directly
+                return [re.match(r'<?(\d[\d_]+\d)>?', str(c).strip()).group(1)
+                        for c in resp if re.match(r'<?(\d[\d_]+\d)', str(c).strip())]
+            return parse_response(resp)
+        df['pred_claims'] = df.apply(extract_preds, axis=1)
 
         parse_failures = (df['pred_claims'].map(len) == 0).sum()
         print(f"  {cfg['label']}: {len(df)} samples, {parse_failures} parse failures")

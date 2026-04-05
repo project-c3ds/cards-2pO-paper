@@ -1,4 +1,4 @@
-# CARDS Qwen3.5 — Full Model Comparison
+# CARDS Qwen3.5 — Full Model Comparison (val set)
 
 | Variant | Training Data | Parse Failures |
 |---------|--------------|----------------|
