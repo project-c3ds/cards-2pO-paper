@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Climate Contrarian Claims — Model Benchmark</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #111;
+  --fg: #999;
+  --fg-bright: #ccc;
+  --fg-dim: #888;
+  --rule: #222;
+  --accent: #c4654a;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 48px 56px 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+header {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 16px;
+  margin-bottom: 48px;
+}
+header h1 {
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 600;
+  color: #eee;
+  letter-spacing: -0.3px;
+}
+header p {
+  font-size: 11px;
+  color: var(--fg-dim);
+  margin-top: 4px;
+  font-family: var(--mono);
+}
+
+section { margin-bottom: 48px; }
+section h2 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--fg-dim);
+  margin-bottom: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+thead th {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--fg-dim);
+  text-align: right;
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--rule);
+}
+thead th:first-child { text-align: left; padding-left: 0; }
+tbody td {
+  text-align: right;
+  padding: 7px 10px;
+  border-bottom: 1px solid #181818;
+  color: var(--fg);
+  font-weight: 400;
+}
+tbody td:first-child {
+  text-align: left;
+  font-family: var(--sans);
+  font-weight: 500;
+  color: var(--fg-bright);
+  padding-left: 0;
+}
+tbody tr:last-child td { border-bottom: 1px solid var(--rule); }
+
+.best { color: var(--accent); font-weight: 700; }
+.delta-pos { color: var(--fg); }
+.delta-neg { color: var(--fg-dim); }
+.delta-flat { color: var(--fg-dim); }
+.base-val { color: var(--fg-dim); }
+.na { color: #333; }
+.sep { border-left: 1px solid #282828; }
+
+.heatmap td {
+  text-align: center;
+  font-weight: 500;
+  padding: 8px 6px;
+  min-width: 72px;
+}
+.heatmap td:first-child {
+  text-align: left;
+  min-width: 160px;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--fg-bright);
+}
+.heatmap td:nth-child(2) {
+  text-align: right;
+  color: var(--fg-dim);
+  font-size: 11px;
+  min-width: 40px;
+}
+.heatmap thead th {
+  text-align: center;
+  font-size: 9px;
+  white-space: nowrap;
+  padding: 0 6px 8px;
+}
+.heatmap thead th:first-child { text-align: left; }
+.heatmap thead th:nth-child(2) { text-align: right; }
+
+footer {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: #333;
+  border-top: 1px solid var(--rule);
+  padding-top: 16px;
+  margin-top: 16px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Climate Contrarian Claims — Model Benchmark</h1>
+  <p>test set &middot; n=1436 &middot; level 3 taxonomy &middot; support &ge; 3 &middot; 2026-04-05</p>
+</header>
+
+<section>
+  <h2>API Baselines</h2>
+  <table>
+    <thead><tr>
+      <th>Model</th><th>Micro F1</th><th>Macro F1</th><th>Samples F1</th><th>Precision</th><th>Recall</th>
+    </tr></thead>
+    <tbody id="b-api"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Fine-tuned Models</h2>
+  <table>
+    <thead><tr>
+      <th rowspan="2">Model</th>
+      <th colspan="3" class="sep" style="text-align:center;border-bottom:none">Micro F1</th>
+      <th colspan="3" class="sep" style="text-align:center;border-bottom:none">Macro F1</th>
+      <th colspan="3" class="sep" style="text-align:center;border-bottom:none">Samples F1</th>
+    </tr><tr>
+      <th class="sep">Base</th><th>FT</th><th>&Delta;</th>
+      <th class="sep">Base</th><th>FT</th><th>&Delta;</th>
+      <th class="sep">Base</th><th>FT</th><th>&Delta;</th>
+    </tr></thead>
+    <tbody id="b-ft"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Performance by Claim Category</h2>
+  <table class="heatmap">
+    <thead id="h-heat"></thead>
+    <tbody id="b-heat"></tbody>
+  </table>
+</section>
+
+<footer>
+  Climate contrarian claims taxonomy &middot; 80+ hierarchical categories &middot; multi-label classification &middot; F1 scores
+</footer>
+
+<script>
+const DATA = {"metrics": {"GPT-4o-mini": {"micro": 0.539, "macro": 0.296, "samples": 0.634, "prec": 0.47, "recall": 0.632, "type": "api"}, "GPT-5.4-nano": {"micro": 0.775, "macro": 0.347, "samples": 0.786, "prec": 0.828, "recall": 0.728, "type": "api"}, "GPT-5.4-mini": {"micro": 0.619, "macro": 0.403, "samples": 0.66, "prec": 0.585, "recall": 0.657, "type": "api"}, "GPT-5.4": {"micro": 0.817, "macro": 0.469, "samples": 0.843, "prec": 0.821, "recall": 0.812, "type": "api"}, "Gemini 2.5 Flash Lite": {"micro": 0.469, "macro": 0.32, "samples": 0.53, "prec": 0.398, "recall": 0.57, "type": "api"}, "Gemini 2.5 Flash": {"micro": 0.616, "macro": 0.419, "samples": 0.654, "prec": 0.557, "recall": 0.69, "type": "api"}, "Gemini 3.1 Flash Lite": {"micro": 0.74, "macro": 0.443, "samples": 0.788, "prec": 0.691, "recall": 0.795, "type": "api"}, "Gemini 3.1 Pro": {"micro": 0.829, "macro": 0.539, "samples": 0.849, "prec": 0.832, "recall": 0.826, "type": "api"}, "Claude Sonnet 4.6": {"micro": 0.833, "macro": 0.519, "samples": 0.873, "prec": 0.81, "recall": 0.856, "type": "api"}, "Claude Opus 4.6": {"micro": 0.825, "macro": 0.531, "samples": 0.851, "prec": 0.811, "recall": 0.841, "type": "api"}, "CARDS-mini-sonnet": {"micro": 0.724, "macro": 0.345, "samples": 0.797, "prec": 0.681, "recall": 0.772, "type": "ft"}, "CARDS-mini-opus": {"micro": 0.815, "macro": 0.434, "samples": 0.836, "prec": 0.842, "recall": 0.79, "type": "ft"}, "CARDS-flash-lite-opus": {"micro": 0.76, "macro": 0.416, "samples": 0.779, "prec": 0.772, "recall": 0.748, "type": "ft"}, "Qwen3.5-4B RECoT": {"micro": 0.765, "macro": 0.371, "samples": 0.781, "prec": 0.799, "recall": 0.734, "type": "ft"}, "Qwen3.5-9B RECoT": {"micro": 0.791, "macro": 0.379, "samples": 0.813, "prec": 0.825, "recall": 0.76, "type": "ft"}, "Qwen3.5-27B RECoT": {"micro": 0.812, "macro": 0.487, "samples": 0.833, "prec": 0.829, "recall": 0.796, "type": "ft"}, "Gemma4-E4B RECoT": {"micro": 0.64, "macro": 0.351, "samples": 0.679, "prec": 0.612, "recall": 0.671, "type": "ft"}, "Gemma4-31B RECoT": {"micro": 0.823, "macro": 0.483, "samples": 0.843, "prec": 0.834, "recall": 0.812, "type": "ft"}, "Qwen3.5-4B Base": {"micro": 0.68, "macro": 0.276, "samples": 0.734, "prec": 0.665, "recall": 0.696, "type": "base"}, "Qwen3.5-9B Base": {"micro": 0.641, "macro": 0.258, "samples": 0.734, "prec": 0.582, "recall": 0.712, "type": "base"}, "Qwen3.5-27B Base": {"micro": 0.792, "macro": 0.467, "samples": 0.805, "prec": 0.806, "recall": 0.778, "type": "base"}, "Gemma4-E4B Base": {"micro": 0.635, "macro": 0.341, "samples": 0.673, "prec": 0.612, "recall": 0.661, "type": "base"}, "Gemma4-31B Base": {"micro": 0.814, "macro": 0.507, "samples": 0.85, "prec": 0.792, "recall": 0.836, "type": "base"}}, "superclaim": {"GPT-4o-mini": {"0": {"f1": 0.811, "support": 1154}, "1": {"f1": 0.5, "support": 17}, "2": {"f1": 0.447, "support": 19}, "3": {"f1": 0.583, "support": 11}, "4": {"f1": 0.517, "support": 171}, "5": {"f1": 0.642, "support": 33}, "6": {"f1": 0.59, "support": 50}, "7": {"f1": 0.497, "support": 86}}, "GPT-5.4-nano": {"0": {"f1": 0.912, "support": 1154}, "1": {"f1": 0.5, "support": 17}, "2": {"f1": 0.615, "support": 19}, "3": {"f1": 0.177, "support": 11}, "4": {"f1": 0.697, "support": 171}, "5": {"f1": 0.667, "support": 33}, "6": {"f1": 0.627, "support": 50}, "7": {"f1": 0.613, "support": 86}}, "GPT-5.4-mini": {"0": {"f1": 0.813, "support": 1154}, "1": {"f1": 0.367, "support": 17}, "2": {"f1": 0.566, "support": 19}, "3": {"f1": 0.32, "support": 11}, "4": {"f1": 0.575, "support": 171}, "5": {"f1": 0.733, "support": 33}, "6": {"f1": 0.548, "support": 50}, "7": {"f1": 0.439, "support": 86}}, "GPT-5.4": {"0": {"f1": 0.943, "support": 1154}, "1": {"f1": 0.69, "support": 17}, "2": {"f1": 0.75, "support": 19}, "3": {"f1": 0.696, "support": 11}, "4": {"f1": 0.758, "support": 171}, "5": {"f1": 0.721, "support": 33}, "6": {"f1": 0.696, "support": 50}, "7": {"f1": 0.661, "support": 86}}, "Gemini 2.5 Flash Lite": {"0": {"f1": 0.706, "support": 1154}, "1": {"f1": 0.247, "support": 17}, "2": {"f1": 0.484, "support": 19}, "3": {"f1": 0.136, "support": 11}, "4": {"f1": 0.464, "support": 171}, "5": {"f1": 0.585, "support": 33}, "6": {"f1": 0.479, "support": 50}, "7": {"f1": 0.48, "support": 86}}, "Gemini 2.5 Flash": {"0": {"f1": 0.807, "support": 1154}, "1": {"f1": 0.529, "support": 17}, "2": {"f1": 0.64, "support": 19}, "3": {"f1": 0.643, "support": 11}, "4": {"f1": 0.558, "support": 171}, "5": {"f1": 0.643, "support": 33}, "6": {"f1": 0.545, "support": 50}, "7": {"f1": 0.558, "support": 86}}, "Gemini 3.1 Flash Lite": {"0": {"f1": 0.908, "support": 1154}, "1": {"f1": 0.75, "support": 17}, "2": {"f1": 0.8, "support": 19}, "3": {"f1": 0.636, "support": 11}, "4": {"f1": 0.695, "support": 171}, "5": {"f1": 0.718, "support": 33}, "6": {"f1": 0.536, "support": 50}, "7": {"f1": 0.572, "support": 86}}, "Gemini 3.1 Pro": {"0": {"f1": 0.944, "support": 1154}, "1": {"f1": 0.688, "support": 17}, "2": {"f1": 0.81, "support": 19}, "3": {"f1": 0.769, "support": 11}, "4": {"f1": 0.77, "support": 171}, "5": {"f1": 0.743, "support": 33}, "6": {"f1": 0.711, "support": 50}, "7": {"f1": 0.65, "support": 86}}, "Claude Sonnet 4.6": {"0": {"f1": 0.96, "support": 1154}, "1": {"f1": 0.71, "support": 17}, "2": {"f1": 0.8, "support": 19}, "3": {"f1": 0.833, "support": 11}, "4": {"f1": 0.806, "support": 171}, "5": {"f1": 0.703, "support": 33}, "6": {"f1": 0.697, "support": 50}, "7": {"f1": 0.746, "support": 86}}, "Claude Opus 4.6": {"0": {"f1": 0.944, "support": 1154}, "1": {"f1": 0.75, "support": 17}, "2": {"f1": 0.762, "support": 19}, "3": {"f1": 0.692, "support": 11}, "4": {"f1": 0.773, "support": 171}, "5": {"f1": 0.75, "support": 33}, "6": {"f1": 0.657, "support": 50}, "7": {"f1": 0.676, "support": 86}}, "CARDS-mini-sonnet": {"0": {"f1": 0.932, "support": 1154}, "1": {"f1": 0.581, "support": 17}, "2": {"f1": 0.5, "support": 19}, "3": {"f1": 0.471, "support": 11}, "4": {"f1": 0.655, "support": 171}, "5": {"f1": 0.644, "support": 33}, "6": {"f1": 0.593, "support": 50}, "7": {"f1": 0.649, "support": 86}}, "CARDS-mini-opus": {"0": {"f1": 0.942, "support": 1154}, "1": {"f1": 0.615, "support": 17}, "2": {"f1": 0.632, "support": 19}, "3": {"f1": 0.476, "support": 11}, "4": {"f1": 0.753, "support": 171}, "5": {"f1": 0.794, "support": 33}, "6": {"f1": 0.743, "support": 50}, "7": {"f1": 0.676, "support": 86}}, "CARDS-flash-lite-opus": {"0": {"f1": 0.902, "support": 1154}, "1": {"f1": 0.538, "support": 17}, "2": {"f1": 0.706, "support": 19}, "3": {"f1": 0.667, "support": 11}, "4": {"f1": 0.687, "support": 171}, "5": {"f1": 0.73, "support": 33}, "6": {"f1": 0.642, "support": 50}, "7": {"f1": 0.568, "support": 86}}, "Qwen3.5-4B RECoT": {"0": {"f1": 0.909, "support": 1154}, "1": {"f1": 0.364, "support": 17}, "2": {"f1": 0.645, "support": 19}, "3": {"f1": 0.667, "support": 11}, "4": {"f1": 0.668, "support": 171}, "5": {"f1": 0.632, "support": 33}, "6": {"f1": 0.593, "support": 50}, "7": {"f1": 0.58, "support": 86}}, "Qwen3.5-9B RECoT": {"0": {"f1": 0.931, "support": 1154}, "1": {"f1": 0.462, "support": 17}, "2": {"f1": 0.688, "support": 19}, "3": {"f1": 0.545, "support": 11}, "4": {"f1": 0.705, "support": 171}, "5": {"f1": 0.644, "support": 33}, "6": {"f1": 0.673, "support": 50}, "7": {"f1": 0.66, "support": 86}}, "Qwen3.5-27B RECoT": {"0": {"f1": 0.935, "support": 1154}, "1": {"f1": 0.69, "support": 17}, "2": {"f1": 0.722, "support": 19}, "3": {"f1": 0.8, "support": 11}, "4": {"f1": 0.757, "support": 171}, "5": {"f1": 0.781, "support": 33}, "6": {"f1": 0.804, "support": 50}, "7": {"f1": 0.641, "support": 86}}, "Gemma4-E4B RECoT": {"0": {"f1": 0.834, "support": 1154}, "1": {"f1": 0.516, "support": 17}, "2": {"f1": 0.769, "support": 19}, "3": {"f1": 0.522, "support": 11}, "4": {"f1": 0.569, "support": 171}, "5": {"f1": 0.667, "support": 33}, "6": {"f1": 0.565, "support": 50}, "7": {"f1": 0.543, "support": 86}}, "Gemma4-31B RECoT": {"0": {"f1": 0.94, "support": 1154}, "1": {"f1": 0.645, "support": 17}, "2": {"f1": 0.8, "support": 19}, "3": {"f1": 0.762, "support": 11}, "4": {"f1": 0.788, "support": 171}, "5": {"f1": 0.8, "support": 33}, "6": {"f1": 0.75, "support": 50}, "7": {"f1": 0.634, "support": 86}}, "Qwen3.5-4B Base": {"0": {"f1": 0.875, "support": 1154}, "1": {"f1": 0.438, "support": 17}, "2": {"f1": 0.533, "support": 19}, "3": {"f1": 0.5, "support": 11}, "4": {"f1": 0.452, "support": 171}, "5": {"f1": 0.39, "support": 33}, "6": {"f1": 0.491, "support": 50}, "7": {"f1": 0.546, "support": 86}}, "Qwen3.5-9B Base": {"0": {"f1": 0.878, "support": 1154}, "1": {"f1": 0.457, "support": 17}, "2": {"f1": 0.545, "support": 19}, "3": {"f1": 0.4, "support": 11}, "4": {"f1": 0.499, "support": 171}, "5": {"f1": 0.51, "support": 33}, "6": {"f1": 0.518, "support": 50}, "7": {"f1": 0.523, "support": 86}}, "Qwen3.5-27B Base": {"0": {"f1": 0.929, "support": 1154}, "1": {"f1": 0.667, "support": 17}, "2": {"f1": 0.789, "support": 19}, "3": {"f1": 0.692, "support": 11}, "4": {"f1": 0.672, "support": 171}, "5": {"f1": 0.687, "support": 33}, "6": {"f1": 0.632, "support": 50}, "7": {"f1": 0.615, "support": 86}}, "Gemma4-E4B Base": {"0": {"f1": 0.837, "support": 1154}, "1": {"f1": 0.55, "support": 17}, "2": {"f1": 0.5, "support": 19}, "3": {"f1": 0.364, "support": 11}, "4": {"f1": 0.539, "support": 171}, "5": {"f1": 0.652, "support": 33}, "6": {"f1": 0.5, "support": 50}, "7": {"f1": 0.514, "support": 86}}, "Gemma4-31B Base": {"0": {"f1": 0.946, "support": 1154}, "1": {"f1": 0.686, "support": 17}, "2": {"f1": 0.78, "support": 19}, "3": {"f1": 0.741, "support": 11}, "4": {"f1": 0.792, "support": 171}, "5": {"f1": 0.746, "support": 33}, "6": {"f1": 0.647, "support": 50}, "7": {"f1": 0.673, "support": 86}}}, "superclaim_names": {"0": "No Claim", "1": "Not Happening", "2": "Not Human", "3": "Not Bad", "4": "Solutions Bad", "5": "Science Unreliable", "6": "Proponents Wrong", "7": "Fossil Fuels Good"}};
+
+const M = DATA.metrics;
+const SC = DATA.superclaim;
+const N = DATA.superclaim_names;
+const p = v => (v * 100).toFixed(1);
+
+// ── API ──
+const apiNames = ['Claude Sonnet 4.6','Claude Opus 4.6','Gemini 3.1 Pro','GPT-5.4','GPT-5.4-nano','GPT-5.4-mini','GPT-4o-mini','Gemini 3.1 Flash Lite','Gemini 2.5 Flash','Gemini 2.5 Flash Lite'];
+const apiSorted = [...apiNames].sort((a, b) => M[b].micro - M[a].micro);
+const cols = ['micro','macro','samples','prec','recall'];
+const apiMax = {};
+cols.forEach(c => { apiMax[c] = Math.max(...apiNames.map(n => M[n][c])); });
+
+const ab = document.getElementById('b-api');
+apiSorted.forEach(name => {
+  const m = M[name];
+  let r = `<td>${name}</td>`;
+  cols.forEach(c => {
+    r += `<td class="${Math.abs(m[c] - apiMax[c]) < 0.0005 ? 'best' : ''}">${p(m[c])}</td>`;
+  });
+  ab.innerHTML += `<tr>${r}</tr>`;
+});
+
+// ── FT ──
+const ftNames = ['Gemma4-31B RECoT','Qwen3.5-27B RECoT','CARDS-mini-opus','Qwen3.5-9B RECoT','Qwen3.5-4B RECoT','CARDS-flash-lite-opus','CARDS-mini-sonnet','Gemma4-E4B RECoT'];
+const baseMap = {'Gemma4-31B RECoT':'Gemma4-31B Base','Qwen3.5-27B RECoT':'Qwen3.5-27B Base','Qwen3.5-9B RECoT':'Qwen3.5-9B Base','Qwen3.5-4B RECoT':'Qwen3.5-4B Base','Gemma4-E4B RECoT':'Gemma4-E4B Base'};
+const ftSorted = [...ftNames].sort((a, b) => M[b].micro - M[a].micro);
+const ftCols = ['micro','macro','samples'];
+const ftMax = {};
+ftCols.forEach(c => { ftMax[c] = Math.max(...ftNames.map(n => M[n][c])); });
+
+const fb = document.getElementById('b-ft');
+ftSorted.forEach(name => {
+  const m = M[name];
+  const bn = baseMap[name];
+  const bm = bn && M[bn] ? M[bn] : null;
+  let r = `<td>${name}</td>`;
+  // For each metric: Base | FT | Delta
+  ftCols.forEach(c => {
+    // Base
+    r += `<td class="base-val sep">${bm ? p(bm[c]) : '<span class="na">&mdash;</span>'}</td>`;
+    // FT
+    r += `<td class="${Math.abs(m[c] - ftMax[c]) < 0.0005 ? 'best' : ''}">${p(m[c])}</td>`;
+    // Delta
+    if (!bm) { r += `<td class="na">&mdash;</td>`; }
+    else {
+      const d = ((m[c] - bm[c]) * 100).toFixed(1);
+      const num = parseFloat(d);
+      let cls = num > 1 ? 'delta-pos' : num < -1 ? 'delta-neg' : 'delta-flat';
+      r += `<td class="${cls}">${num > 0 ? '+' : ''}${d}</td>`;
+    }
+  });
+  fb.innerHTML += `<tr>${r}</tr>`;
+});
+
+// ── Heatmap ──
+const hm = ['Claude Sonnet 4.6','Gemini 3.1 Pro','GPT-5.4','Gemma4-31B RECoT','Qwen3.5-27B RECoT','CARDS-mini-opus'];
+const sk = ['0','1','2','3','4','5','6','7'];
+
+const hh = document.getElementById('h-heat');
+let hdr = '<tr><th>Category</th><th>n</th>';
+hm.forEach(n => {
+  hdr += `<th>${n.replace('Claude ','Cl ').replace('Gemini ','Gem ').replace('Qwen3.5-','Q').replace('Gemma4-','G4-').replace('CARDS-','C-').replace(' RECoT','')}</th>`;
+});
+hh.innerHTML = hdr + '</tr>';
+
+const hb = document.getElementById('b-heat');
+sk.forEach(sc => {
+  let sup = '—';
+  for (const n of hm) { if (SC[n]?.[sc]) { sup = SC[n][sc].support; break; } }
+  let r = `<td>${sc}: ${N[sc]}</td><td>${sup}</td>`;
+  hm.forEach(n => {
+    const d = SC[n]?.[sc];
+    if (d) {
+      const f = d.f1;
+      // Diverging: green for good, red for bad, neutral in middle
+      let bg, fg;
+      if (f >= 0.8) { bg = 'rgba(80,180,80,0.35)'; fg = '#8f8'; }
+      else if (f >= 0.7) { bg = 'rgba(80,180,80,0.15)'; fg = '#9a9'; }
+      else if (f >= 0.6) { bg = 'rgba(255,255,255,0.04)'; fg = '#999'; }
+      else if (f >= 0.5) { bg = 'rgba(196,101,74,0.2)'; fg = '#c88'; }
+      else { bg = 'rgba(196,101,74,0.45)'; fg = '#e88'; }
+      r += `<td style="background:${bg};color:${fg}">${(f*100).toFixed(0)}</td>`;
+    } else { r += `<td class="na">&mdash;</td>`; }
+  });
+  hb.innerHTML += `<tr>${r}</tr>`;
+});
+</script>
+</body>
+</html>

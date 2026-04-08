@@ -117,6 +117,61 @@ VARIANTS = OrderedDict([
         "label": "Gemma4-31B Base",
         "training_data": "—",
     }),
+    ("gpt54_nano", {
+        "file": "gpt-5-4-nano.jsonl",
+        "label": "GPT-5.4-nano",
+        "training_data": "—",
+    }),
+    ("gpt54_mini", {
+        "file": "gpt-5-4-mini.jsonl",
+        "label": "GPT-5.4-mini",
+        "training_data": "—",
+    }),
+    ("gpt54", {
+        "file": "gpt-5-4.jsonl",
+        "label": "GPT-5.4",
+        "training_data": "—",
+    }),
+    ("gemini31_pro", {
+        "file": "gemini-3-1-pro.jsonl",
+        "label": "Gemini 3.1 Pro",
+        "training_data": "—",
+    }),
+    ("gemini25_flash_lite", {
+        "file": "gemini-2-5-flash-lite.jsonl",
+        "label": "Gemini 2.5 Flash Lite",
+        "training_data": "—",
+    }),
+    ("gemini25_flash", {
+        "file": "gemini-2-5-flash.jsonl",
+        "label": "Gemini 2.5 Flash",
+        "training_data": "—",
+    }),
+    ("gemini31_flash_lite", {
+        "file": "gemini-3-1-flash-lite.jsonl",
+        "label": "Gemini 3.1 Flash Lite",
+        "training_data": "—",
+    }),
+    ("claude_sonnet_46", {
+        "file": "claude-sonnet-4-6.jsonl",
+        "label": "Claude Sonnet 4.6",
+        "training_data": "—",
+    }),
+    ("claude_opus_46", {
+        "file": "claude-opus-4-6.jsonl",
+        "label": "Claude Opus 4.6",
+        "training_data": "—",
+    }),
+    ("cards_flash_opus", {
+        "file": "cards-flash-opus.jsonl",
+        "label": "CARDS-flash-opus",
+        "training_data": "—",
+    }),
+    ("cards_flash_lite_opus", {
+        "file": "cards-flash-lite-opus.jsonl",
+        "label": "CARDS-flash-lite-opus",
+        "training_data": "—",
+    }),
     ("gemma4_e4b_recot", {
         "file": "cards-gemma4-e4b.jsonl",
         "label": "Gemma4-E4B RECoT",
@@ -136,6 +191,8 @@ MIN_SUPPORT_THRESHOLDS = [0, 3]  # 0 = all labels
 # Helpers
 # ---------------------------------------------------------------------------
 def parse_response(response):
+    if not isinstance(response, str):
+        return []
     if '</think>' in response:
         after_think = response.split('</think>')[-1].strip()
     else:
