@@ -11,6 +11,7 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 import os
 
@@ -20,6 +21,27 @@ import numpy as np
 from sklearn.metrics import f1_score
 from sklearn.preprocessing import MultiLabelBinarizer
 from statsmodels.stats.contingency_tables import mcnemar
+
+
+def parse_response(response):
+    if not isinstance(response, str):
+        return []
+    if '</think>' in response:
+        after_think = response.split('</think>')[-1].strip()
+    else:
+        after_think = response
+    cat_match = re.search(r'categories:\s*\n((?:\s*-\s*.+\n?)+)', after_think)
+    if cat_match:
+        return re.findall(r'-\s*<?(\d[\d_]+\d)>?', cat_match.group(1))
+    return []
+
+
+def extract_preds(row):
+    resp = row.get('response', '')
+    if isinstance(resp, list):
+        return [re.match(r'<?(\d[\d_]+\d)>?', str(c).strip()).group(1)
+                for c in resp if re.match(r'<?(\d[\d_]+\d)', str(c).strip())]
+    return parse_response(resp)
 
 
 def get_level_code(code, level=3):
@@ -54,11 +76,15 @@ def main():
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()
 
-    # Load data
+    # Load data and reparse predictions from response
     with open(args.file_a) as f:
         records_a = [json.loads(line) for line in f]
+    for r in records_a:
+        r['pred_claims'] = extract_preds(r)
     with open(args.file_b) as f:
         records_b = [json.loads(line) for line in f]
+    for r in records_b:
+        r['pred_claims'] = extract_preds(r)
 
     name_a = os.path.basename(args.file_a).replace('.jsonl', '')
     name_b = os.path.basename(args.file_b).replace('.jsonl', '')

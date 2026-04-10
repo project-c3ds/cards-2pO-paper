@@ -1618,5 +1618,167 @@
       "micro_recall": 0.812,
       "accuracy": 0.795
     }
+  },
+  "4b_quant": {
+    "label": "Qwen3.5-4B Q4_K_M",
+    "training_data": "1791 (quant)",
+    "n_samples": 1436,
+    "parse_failures": 1,
+    "level_1_all": {
+      "samples_f1": 0.851,
+      "macro_f1": 0.595,
+      "micro_f1": 0.839,
+      "micro_precision": 0.855,
+      "micro_recall": 0.824,
+      "accuracy": 0.821
+    },
+    "level_2_all": {
+      "samples_f1": 0.819,
+      "macro_f1": 0.303,
+      "micro_f1": 0.791,
+      "micro_precision": 0.817,
+      "micro_recall": 0.767,
+      "accuracy": 0.779
+    },
+    "level_3_all": {
+      "samples_f1": 0.799,
+      "macro_f1": 0.268,
+      "micro_f1": 0.755,
+      "micro_precision": 0.776,
+      "micro_recall": 0.735,
+      "accuracy": 0.76
+    },
+    "level_1_minsup_3": {
+      "samples_f1": 0.851,
+      "macro_f1": 0.595,
+      "micro_f1": 0.839,
+      "micro_precision": 0.855,
+      "micro_recall": 0.824,
+      "accuracy": 0.821
+    },
+    "level_2_minsup_3": {
+      "samples_f1": 0.82,
+      "macro_f1": 0.415,
+      "micro_f1": 0.799,
+      "micro_precision": 0.828,
+      "micro_recall": 0.773,
+      "accuracy": 0.781
+    },
+    "level_3_minsup_3": {
+      "samples_f1": 0.798,
+      "macro_f1": 0.355,
+      "micro_f1": 0.777,
+      "micro_precision": 0.812,
+      "micro_recall": 0.744,
+      "accuracy": 0.761
+    }
+  },
+  "9b_quant": {
+    "label": "Qwen3.5-9B Q4_K_M",
+    "training_data": "1791 (quant)",
+    "n_samples": 1436,
+    "parse_failures": 3,
+    "level_1_all": {
+      "samples_f1": 0.874,
+      "macro_f1": 0.684,
+      "micro_f1": 0.865,
+      "micro_precision": 0.883,
+      "micro_recall": 0.848,
+      "accuracy": 0.843
+    },
+    "level_2_all": {
+      "samples_f1": 0.842,
+      "macro_f1": 0.393,
+      "micro_f1": 0.817,
+      "micro_precision": 0.843,
+      "micro_recall": 0.792,
+      "accuracy": 0.797
+    },
+    "level_3_all": {
+      "samples_f1": 0.819,
+      "macro_f1": 0.289,
+      "micro_f1": 0.774,
+      "micro_precision": 0.801,
+      "micro_recall": 0.749,
+      "accuracy": 0.782
+    },
+    "level_1_minsup_3": {
+      "samples_f1": 0.874,
+      "macro_f1": 0.684,
+      "micro_f1": 0.865,
+      "micro_precision": 0.883,
+      "micro_recall": 0.848,
+      "accuracy": 0.843
+    },
+    "level_2_minsup_3": {
+      "samples_f1": 0.842,
+      "macro_f1": 0.459,
+      "micro_f1": 0.823,
+      "micro_precision": 0.851,
+      "micro_recall": 0.796,
+      "accuracy": 0.798
+    },
+    "level_3_minsup_3": {
+      "samples_f1": 0.818,
+      "macro_f1": 0.376,
+      "micro_f1": 0.795,
+      "micro_precision": 0.835,
+      "micro_recall": 0.759,
+      "accuracy": 0.786
+    }
+  },
+  "27b_quant": {
+    "label": "Qwen3.5-27B Q4_K_M",
+    "training_data": "1791 (quant)",
+    "n_samples": 1436,
+    "parse_failures": 0,
+    "level_1_all": {
+      "samples_f1": 0.889,
+      "macro_f1": 0.771,
+      "micro_f1": 0.884,
+      "micro_precision": 0.891,
+      "micro_recall": 0.876,
+      "accuracy": 0.857
+    },
+    "level_2_all": {
+      "samples_f1": 0.862,
+      "macro_f1": 0.54,
+      "micro_f1": 0.844,
+      "micro_precision": 0.856,
+      "micro_recall": 0.832,
+      "accuracy": 0.811
+    },
+    "level_3_all": {
+      "samples_f1": 0.84,
+      "macro_f1": 0.445,
+      "micro_f1": 0.802,
+      "micro_precision": 0.813,
+      "micro_recall": 0.792,
+      "accuracy": 0.79
+    },
+    "level_1_minsup_3": {
+      "samples_f1": 0.889,
+      "macro_f1": 0.771,
+      "micro_f1": 0.884,
+      "micro_precision": 0.891,
+      "micro_recall": 0.876,
+      "accuracy": 0.857
+    },
+    "level_2_minsup_3": {
+      "samples_f1": 0.862,
+      "macro_f1": 0.596,
+      "micro_f1": 0.848,
+      "micro_precision": 0.86,
+      "micro_recall": 0.835,
+      "accuracy": 0.815
+    },
+    "level_3_minsup_3": {
+      "samples_f1": 0.84,
+      "macro_f1": 0.517,
+      "micro_f1": 0.825,
+      "micro_precision": 0.852,
+      "micro_recall": 0.799,
+      "accuracy": 0.797
+    }
   }
 }

@@ -182,6 +182,22 @@ VARIANTS = OrderedDict([
         "label": "Gemma4-31B RECoT",
         "training_data": "1791",
     }),
+    # Quantized (Q4_K_M GGUF) variants
+    ("4b_quant", {
+        "file": "quants/cards_qwen_35_4b.jsonl",
+        "label": "Qwen3.5-4B Q4_K_M",
+        "training_data": "1791 (quant)",
+    }),
+    ("9b_quant", {
+        "file": "quants/cards_qwen_35_9b.jsonl",
+        "label": "Qwen3.5-9B Q4_K_M",
+        "training_data": "1791 (quant)",
+    }),
+    ("27b_quant", {
+        "file": "quants/cards_qwen_35_27b.jsonl",
+        "label": "Qwen3.5-27B Q4_K_M",
+        "training_data": "1791 (quant)",
+    }),
 ])
 
 MIN_SUPPORT_THRESHOLDS = [0, 3]  # 0 = all labels
